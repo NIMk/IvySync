@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <getopt.h>
 #include <errno.h>
 #include <signal.h>
@@ -229,7 +230,6 @@ void *runner(void *arg) {
 
 int cmdline(int argc, char **argv) {
   FILE *fd;
-  int c;
   int res;
 
   // zeroing all structs, like a constructor
@@ -262,11 +262,11 @@ int cmdline(int argc, char **argv) {
     
   } while(res > 0);
   
+  return res;
 }
 
 
 int main(int argc, char **argv) {
-  int ready;
   int c;
 
   /* register quit signal handlers */
