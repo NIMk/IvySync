@@ -1,5 +1,5 @@
 
-/*  Pvr SyncStarter
+/*  IvySync - Video SyncStarter
  *
  *  (c) Copyright 2004 Denis Roio aka jaromil <jaromil@dyne.org>
  *                     Nederlands Instituut voor Mediakunst
@@ -18,9 +18,9 @@
  * this source code; if not, write to:
  * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * to compile this sourcecode: gcc -o pvrsync pvrsync.c -lpthreads
+ * to compile this sourcecode: gcc -o ivysync ivysync.c -lpthreads
  * it should work on any POSIX system, including embedded hardware
- * wherever the ivtv pvr drivers can also run.
+ * wherever the IvyTV drivers can also run (see http://ivtv.sf.net)
  *
  */
 
