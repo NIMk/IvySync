@@ -14,11 +14,11 @@ CFLAGS = -I. -Wall -ggdb
 # CFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
 LIBS = -lpthread
 
-all: pvrsync
+all: ivysync
 
 #make clean
 clean:
-	rm -rf *.o *~ pvrsync
+	rm -rf *.o *~ ivysync
 
 # generic make rules
 %: %.c
