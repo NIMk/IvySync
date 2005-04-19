@@ -69,6 +69,7 @@ class Decoder : public Thread {
   
   bool *syncstart;
   
+
  private:
   void run();
   string update();
@@ -76,7 +77,7 @@ class Decoder : public Thread {
   void flush();
 
   vector<string> playlist;
-
+  
   string device;
   int fd;
   FILE *playlist_fd;

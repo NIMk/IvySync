@@ -33,7 +33,7 @@ Decoder::Decoder()
   : Thread() {
   fd = 0;
   playmode = PLAY;
-  position = 0;
+  position = -1;
   playing = false;
 
   memset(buffo,0,sizeof(buffo));
@@ -67,22 +67,21 @@ void Decoder::close() {
 string Decoder::update() {
   string res;
 
-  if(!position) { // first time we play from the playlist
-    res = *( playlist.begin() );
-    position++;
+  if(position<0) { // first time we play from the playlist
+    position = 0;
   } else {
     
     switch(playmode) {
 
     case PLAY: // next
       position++;
-      if( position>playlist.size() )
+      if( position > playlist.size() )
 	stop();
       break;
 
     case CONT: // next or first if at the end
       position++;
-      if( position>playlist.size() )
+      if( position > playlist.size() )
 	position = 1;
       break;
 
@@ -110,9 +109,9 @@ string Decoder::update() {
 
 
 void Decoder::run() {
-  string movie = NULL;
+  string movie;
   int in, written, writing;
-  char *buf;
+  uint8_t *buf;
 
 
   if(!fd) {

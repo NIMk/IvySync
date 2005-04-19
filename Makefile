@@ -20,7 +20,7 @@ OBJ = decoder.o thread.o utils.o cmdline.o
 all: ivysync
 
 ivysync: decoder.o thread.o utils.o cmdline.o
-	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ) $(LIBS)
 
 #make clean
 clean:

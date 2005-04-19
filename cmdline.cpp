@@ -28,6 +28,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <getopt.h>
+#include <signal.h>
 
 #include <decoder.h>
 #include <utils.h>
@@ -80,10 +81,19 @@ int cmdline(int argc, char **argv) {
       //fprintf(stderr,"append %s to playlist %i\n",optarg,act_device);
       fd = fopen(optarg,"rb");
       if(fd) {
-	if(!dec) dec = *(decoders.begin());
+//	if(!dec) dec = (decoders.begin());
+	if(!dec) {
+		dec = new Decoder();
+		if( dec->init("/dev/video16") ) {
+			decoders.push_back( dec );
+		} else {
+			delete dec;
+			dec = NULL;
+		}
+	}
 	if(!dec) {
 	  E("no decoder device initialized on commandline");
-	  A("usage: -d /dev/video16 filenames..");
+	  A("usage: -d /dev/videoNN filenames..");
 	} else 
 	  dec->append( optarg );
 	fclose(fd);
@@ -121,7 +131,12 @@ int main(int argc, char **argv) {
 
 
   cmdline(argc, argv);
-  
+ 
+  if( !decoders.size() ) {
+  	E("no decoder device is initialized, aborting operations");
+	exit(0);
+  }
+ 
 
   for( dec_iter = decoders.begin();
        dec_iter != decoders.end();
@@ -133,8 +148,8 @@ int main(int argc, char **argv) {
 
   }
   
-  fprintf(stderr,"%i players synchronized\n",decoders.size());
-
+  N("%i players to sync",decoders.size());
+	
   
   fprintf(stderr,"Waiting 1 second before startup...");
   jsleep(1,0);
