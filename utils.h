@@ -1,5 +1,5 @@
-/*  Pthread handling class
- *  (c) Copyright 2001 - 2005 Denis Rojo <jaromil@dyne.org>
+/*  Generic utils, used in Fakiir
+ *  (c) Copyright 2001-2005 Denis Roio aka jaromil <jaromil@dyne.org>
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published 
@@ -16,32 +16,22 @@
  * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <pthread.h>
+#ifndef __UTILS_H__
+#define __UTILS_H__
 
-#ifndef __THREAD_H__
-#define __THREAD_H__
+#include <inttypes.h>
 
-class Thread {
+void set_debug(int lev);
+int get_debug();
 
- public:
-  Thread();
-  virtual ~Thread();
+void N(char *format, ...);
+void A(char *format, ...);
+void W(char *format, ...);
+void E(char *format, ...);
+void D(char *format, ...);
 
-  bool launch();
-  bool running;
-  bool quit;
-
-  virtual void run() =0;
-
-  void lock();
-  void unlock();
-  int join();
-
- private:
-
-  pthread_t thread;
-  pthread_attr_t attr;
-  pthread_mutex_t mutex;
-};
+void jsleep(int sec, long nsec);
 
 #endif
+
+

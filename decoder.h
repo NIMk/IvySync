@@ -23,9 +23,13 @@
 #ifndef __DECODER_H__
 #define __DECODER_H__
 
+#include <iostream>
 #include <string>
+#include <vector>
 #include <pthread.h>
 #include <inttypes.h>
+
+#include <thread.h>
 
 using namespace std;
 using namespace __gnu_cxx;
@@ -34,8 +38,12 @@ using namespace __gnu_cxx;
 #define PLAY 1
 #define CONT 2
 #define LOOP 3
+#define RAND 4
 
-class Decoder {
+// size of video chunks read in bytes
+#define CHUNKSIZE (1024*64)
+
+class Decoder : public Thread {
 
  public:
   Decoder();
@@ -43,32 +51,37 @@ class Decoder {
 
   bool init(char *dev);
 
-  // playlist stuff
-  bool prepend(char *file);
-  bool insert(char *file, int pos);
-  bool append(char *file);
-  int playmode;
-  int position;
+  void close();
 
- protected:
+  // playlist stuff
+  bool prepend(char *file); ///< prepend *file at the beginning of the playlist
+  bool append(char *file); ///< append *file at the end of the playlist
+  bool insert(char *file, int pos); ///< insert *file in playlist at pos
+  bool remove(char *file); ///< remove the first occurrence of *file
+  bool remove(int pos); ///< remove the playlist entry at pos
+
+  int playmode; ///< PLAY, CONT, LOOP or RAND
+  int position; ///< current position in playlist (read-only)
+
   bool play();
   bool stop();
-  bool running;
+  bool playing;
+  
+  bool *syncstart;
   
  private:
-  int update();
+  void run();
+  string update();
 
-  vector<Movie*> playlist;
+  void flush();
+
+  vector<string> playlist;
 
   string device;
   int fd;
+  FILE *playlist_fd;
 
-  // posix thread stuff
-  pthread_t thread;
-  pthread_attr_t thread_attr;
-  pthread_mutex_t mutex;
-
-  uint8_t buffo[(1024*64)+1024]; // 64k + bound
+  uint8_t buffo[(1024*64)+1024]; // 64k + 1k bound
 
 };
 

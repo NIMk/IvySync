@@ -6,25 +6,30 @@
 
 
 CC = gcc
+CPP = g++
 LINKER = ld
 # debugging flags:
-CFLAGS = -I. -Wall -ggdb 
+CPPFLAGS = -I. -Wall -ggdb 
 
 # optimized flags:
-# CFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
+# CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
 LIBS = -lpthread
 
+OBJ = decoder.o thread.o utils.o cmdline.o
+
 all: ivysync
+
+ivysync: decoder.o thread.o utils.o cmdline.o
+	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ)
 
 #make clean
 clean:
 	rm -rf *.o *~ ivysync
 
 # generic make rules
-%: %.c
-	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+#%: %.c
+#	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+#%.o: %.c
+#	$(CC) $(CFLAGS) -c -o $@ $<
 
 

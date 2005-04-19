@@ -18,20 +18,217 @@
  * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <decoder.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/select.h>
+#include <sys/poll.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-Decoder::Decoder() {
+#include <decoder.h>
+#include <utils.h>
+
+Decoder::Decoder()
+  : Thread() {
   fd = 0;
-  playmode = 1;
+  playmode = PLAY;
   position = 0;
+  playing = false;
 
   memset(buffo,0,sizeof(buffo));
 }
 
-Decoder::Decoder() {
-  if(running) stop();
-  if(fd) close(fd);
+Decoder::~Decoder() {
+  close();
   quit = true;
-  join();
 }
 
+bool Decoder::init(char *dev) {
+  fd = ::open(dev, O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
+  if(fd<0) {
+    E("error opening device %s: %s",dev,strerror(errno));
+    return false;
+  }
+
+  device = dev;
+  return true;
+}
+
+void Decoder::close() {
+  if(playing) stop();
+  if(running) {
+    quit = true;
+    join();
+  }
+  if(fd) ::close(fd);
+}
+
+string Decoder::update() {
+  string res;
+
+  if(!position) { // first time we play from the playlist
+    res = *( playlist.begin() );
+    position++;
+  } else {
+    
+    switch(playmode) {
+
+    case PLAY: // next
+      position++;
+      if( position>playlist.size() )
+	stop();
+      break;
+
+    case CONT: // next or first if at the end
+      position++;
+      if( position>playlist.size() )
+	position = 1;
+      break;
+
+    case LOOP:
+      // play the same again
+      break;
+
+    case RAND:
+      // play a random one
+      break;
+
+    default:
+      stop();
+      // just stop
+      break;
+    }
+
+  }
+  
+  res = playlist[position];
+  
+  return res;  
+}
+
+
+
+void Decoder::run() {
+  string movie = NULL;
+  int in, written, writing;
+  char *buf;
+
+
+  if(!fd) {
+    E("thread %u falling down: no device opened",pthread_self());
+    return;
+  }
+  
+  running = true;
+
+  while(!quit) {
+
+    // while(!playing) jsleep ??
+
+    movie = update();
+
+    playlist_fd = fopen( movie.c_str(), "rb" );
+    if(!playlist_fd) {
+      E("can't open %s: %s",movie.c_str(), strerror(errno));
+      update();
+      continue;
+    }
+
+    do { // inner reading loop
+      in = fread(buffo, 1, CHUNKSIZE, playlist_fd);
+      
+      if( feof(playlist_fd) || in<1 ) { // EOF
+	D("end of file: %s",movie.c_str());
+	break;
+      }
+      
+      written = 0;
+      writing = in;
+      buf = buffo;
+      
+      if(! *syncstart) unlock();
+      
+      while(! *syncstart) jsleep(0,1); // check every nanosecond
+      
+      while(writing) { // writing loop
+	
+	buf += written;
+	
+	written = ::write(fd, buf, writing);
+
+	if(written<0) // error on write
+	  continue;
+
+	writing -= written;
+	
+	flush();
+      }
+      
+    } while(in>0 && !quit); // read/write inner loop
+    
+    fclose(playlist_fd);
+
+  } // run() thread loop
+
+  if(playlist_fd) fclose(playlist_fd); // be sure we close
+  
+  return;
+}
+
+void Decoder::flush() {
+  struct pollfd fdled;
+  fdled.fd = fd;
+  fdled.events=POLLOUT;
+  
+  while( poll(&fdled,1,1000) < 1 ) { // wait infinite until ready
+    if(fdled.revents & POLLOUT) return;
+    else W("device %i still not ready for writing",fd);
+  }
+}
+
+bool Decoder::play() {
+  playing = true;
+  return playing;
+}
+bool Decoder::stop() {
+  playing = false;
+  return playing;
+}
+
+bool Decoder::prepend(char *file) {
+  playlist.insert( playlist.begin(), file );
+  return true;
+}
+
+bool Decoder::append(char *file) {
+  playlist.push_back(file);
+  return true;
+}
+
+bool Decoder::insert(char *file, int pos) {
+  if(pos > playlist.size() ) {
+
+    // playlist is smaller than pos: append at the end
+    playlist.push_back(file);
+    
+  } else {
+
+    vector<string>::iterator pl_iter;
+    int c;
+    for( pl_iter = playlist.begin(), c=1;
+	 c<pos; ++pl_iter, c++ );
+    playlist.insert( pl_iter, file );
+
+  }
+  return true;
+}
+
+bool Decoder::remove(char *file) {
+  A("TODO: Decoder::remove(char *file)");
+  return true;
+}
+bool Decoder::remove(int pos) {
+  A("TODO: Decoder::remove(int pos)");
+  return true;
+}
