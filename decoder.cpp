@@ -74,15 +74,17 @@ string Decoder::update() {
     switch(playmode) {
 
     case PLAY: // next
-      position++;
-      if( position > playlist.size() )
-	stop();
+
+      if( position+1 > playlist.size()-1 ) stop();
+      else position++;
+
       break;
 
     case CONT: // next or first if at the end
-      position++;
-      if( position > playlist.size() )
-	position = 1;
+
+      if( position+1 > playlist.size()-1 ) position = 1;
+      else position++;
+
       break;
 
     case LOOP:
@@ -123,7 +125,12 @@ void Decoder::run() {
 
   while(!quit) {
 
-    // while(!playing) jsleep ??
+
+    // if is not playling, sleep
+    while(!playing && !quit)
+      jsleep(0,1);
+    if(quit) break;
+    ///////////////////////////
 
     movie = update();
 
@@ -135,6 +142,13 @@ void Decoder::run() {
     }
 
     do { // inner reading loop
+
+      // if is not playling, sleep
+      while(!playing && !quit)
+	jsleep(0,1);
+      if(quit) break;
+      ///////////////////////////
+
       in = fread(buffo, 1, CHUNKSIZE, playlist_fd);
       
       if( feof(playlist_fd) || in<1 ) { // EOF
@@ -146,9 +160,10 @@ void Decoder::run() {
       writing = in;
       buf = buffo;
       
-      if(! *syncstart) unlock();
-      
-      while(! *syncstart) jsleep(0,1); // check every nanosecond
+      if(!*syncstart) {
+	unlock();
+	while(!*syncstart) jsleep(0,1); // check every nanosecond
+      }
       
       while(writing) { // writing loop
 	
@@ -167,11 +182,15 @@ void Decoder::run() {
     } while(in>0 && !quit); // read/write inner loop
     
     fclose(playlist_fd);
+    playlist_fd = 0;
 
   } // run() thread loop
 
-  if(playlist_fd) fclose(playlist_fd); // be sure we close
-  
+  if(playlist_fd)
+    fclose(playlist_fd); // be sure we close
+  playlist_fd = 0;
+
+  D("thread %u finished", pthread_self());
   return;
 }
 

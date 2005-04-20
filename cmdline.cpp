@@ -37,9 +37,10 @@ bool syncstart = false;
 
 vector<Decoder*> decoders;
 
-char *short_options = "-d:";
+char *short_options = "-d:D";
 const struct option long_options[] = {
   { "device", required_argument, NULL, 'd'},
+  { "scan", no_argument, NULL, 'd'},
   {0, 0, 0, 0}
 };
 
@@ -77,6 +78,25 @@ int cmdline(int argc, char **argv) {
       }
       break;
 
+    case 'D':
+      N("Scanning for available playback devices:");
+      dec = new Decoder();
+      if( dec->init("/dev/video16") )
+	A("1. /dev/video16");
+      dec->close();
+      if( dec->init("/dev/video17") )
+	A("2. /dev/video17");
+      dec->close();
+      if( dec->init("/dev/video18") )
+	A("3. /dev/video18");
+      dec->close();
+      if( dec->init("/dev/video19") )
+	A("4. /dev/video19");
+      dec->close();
+      delete dec;
+      
+      break;
+	
     case 1:
       //fprintf(stderr,"append %s to playlist %i\n",optarg,act_device);
       fd = fopen(optarg,"rb");
@@ -115,6 +135,8 @@ int main(int argc, char **argv) {
   vector<Decoder*>::iterator dec_iter;
   Decoder *dec;
 
+  set_debug(3);
+
   /* register quit signal handlers */
   if (signal (SIGINT, quitproc) == SIG_ERR) {
     fprintf(stderr,"Couldn't install SIGINT handler\n");
@@ -145,6 +167,7 @@ int main(int argc, char **argv) {
     dec = *dec_iter;
     dec->syncstart = &syncstart;
     dec->launch();
+    dec->play();
 
   }
   
