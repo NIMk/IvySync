@@ -34,13 +34,17 @@
 #include <utils.h>
 
 bool syncstart = false;
+bool daemonize = false;
 
 vector<Decoder*> decoders;
 
-char *short_options = "-d:D";
+char *short_options = "-hd:sDp:";
 const struct option long_options[] = {
+  { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
-  { "scan", no_argument, NULL, 'd'},
+  { "scan", no_argument, NULL, 's'},
+  { "daemon", no_argument, NULL, 'D'},
+  { "playmode", required_argument, NULL, 'p'},
   {0, 0, 0, 0}
 };
 
@@ -56,6 +60,17 @@ void quitproc (int Sig) { /* signal handling */
     (*dec_iter)->close();
 
 }
+
+#define CHECK_DECODER \
+	if(!dec) { \
+          dec = new Decoder(); \
+	  if( dec->init("/dev/video16") ) { \
+	    decoders.push_back( dec ); \
+	  } else { \
+	    delete dec; \
+	    dec = NULL; \
+	  } \
+        }
 
 int cmdline(int argc, char **argv) {
   Decoder *dec = NULL;
@@ -78,44 +93,58 @@ int cmdline(int argc, char **argv) {
       }
       break;
 
-    case 'D':
+    case 's':
       N("Scanning for available playback devices:");
       dec = new Decoder();
+
+      N("1. /dev/video16");
       if( dec->init("/dev/video16") )
-	A("1. /dev/video16");
+	A("device is present");
       dec->close();
+
+      N("2. /dev/video17");
       if( dec->init("/dev/video17") )
-	A("2. /dev/video17");
+	A("device is present");
       dec->close();
+
+      N("3. /dev/video18");
       if( dec->init("/dev/video18") )
-	A("3. /dev/video18");
+	A("device is present");
       dec->close();
+
+      N("4. /dev/video19");      
       if( dec->init("/dev/video19") )
-	A("4. /dev/video19");
+	A("device is present");
       dec->close();
+
       delete dec;
+      exit(1);
+      break;
+
+    case 'p':
+      CHECK_DECODER;
+      if( strncasecmp(optarg,"play",4) ==0 )
+	dec->playmode = PLAY;
+      else if( strncasecmp(optarg,"cont",4) ==0 )
+	dec->playmode = CONT;
+      else if( strncasecmp(optarg,"loop",4) ==0 )
+	dec->playmode = LOOP;
+      else if( strncasecmp(optarg,"rand",4) ==0 )
+	dec->playmode = RAND;
+      else
+	E("unrecognized playmode: %s",optarg);
       
       break;
-	
+
+    case 'D':
+      daemonize = true;
+      break;
+
     case 1:
-      //fprintf(stderr,"append %s to playlist %i\n",optarg,act_device);
       fd = fopen(optarg,"rb");
       if(fd) {
-//	if(!dec) dec = (decoders.begin());
-	if(!dec) {
-		dec = new Decoder();
-		if( dec->init("/dev/video16") ) {
-			decoders.push_back( dec );
-		} else {
-			delete dec;
-			dec = NULL;
-		}
-	}
-	if(!dec) {
-	  E("no decoder device initialized on commandline");
-	  A("usage: -d /dev/videoNN filenames..");
-	} else 
-	  dec->append( optarg );
+	CHECK_DECODER;
+	dec->append( optarg );
 	fclose(fd);
       } else E("file %s is not readable",optarg);
       
@@ -179,7 +208,20 @@ int main(int argc, char **argv) {
   fprintf(stderr," GO!\n");
   syncstart = 1;
 
-  while(true);
+  int still_running = decoders.size();
+  
+  if(daemonize) while(true); // loop infinitely
+  else while(still_running) {
+    still_running = 0;
+    for( dec_iter = decoders.begin();
+	 dec_iter != decoders.end();
+	 ++dec_iter) {
+      
+      dec = *dec_iter;
+      if(dec->playing) still_running++;
+
+    }
+  }
 
   N("quit!");
 
