@@ -36,6 +36,7 @@
 bool syncstart = false;
 bool daemonize = false;
 
+// our global vector holding all instantiated decoders
 vector<Decoder*> decoders;
 
 char *short_options = "-hd:sDp:";
