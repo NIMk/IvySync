@@ -9,17 +9,17 @@ CC = gcc
 CPP = g++
 LINKER = ld
 # debugging flags:
-CPPFLAGS = -I. -Wall -ggdb 
+CPPFLAGS = -I. -Wall -ggdb `pkg-config --cflags gtk+-2.0`
 
 # optimized flags:
 # CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
-LIBS = -lpthread
+LIBS = -lpthread `pkg-config --libs gtk+-2.0`
 
-OBJ = decoder.o thread.o utils.o cmdline.o
+OBJ = decoder.o thread.o utils.o cmdline.o gui.o
 
 all: ivysync
 
-ivysync: decoder.o thread.o utils.o cmdline.o
+ivysync: $(OBJ)
 	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ) $(LIBS)
 
 #make clean

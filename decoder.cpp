@@ -52,6 +52,10 @@ bool Decoder::init(char *dev) {
   }
 
   device = dev;
+  // last two chars of the device name are the number
+  int len = strlen(dev);
+  device_num = atoi(&dev[len-2]);
+
   return true;
 }
 
@@ -59,6 +63,7 @@ void Decoder::close() {
   if(playing) stop();
   if(running) {
     quit = true;
+    D("thread was running, waiting to join...");
     join();
   }
   if(fd) ::close(fd);
@@ -123,6 +128,8 @@ void Decoder::run() {
   
   running = true;
 
+  D("thread %u launched",pthread_self());
+
   while(!quit) {
 
 
@@ -133,7 +140,7 @@ void Decoder::run() {
     ///////////////////////////
 
     movie = update();
-
+    
     playlist_fd = fopen( movie.c_str(), "rb" );
     if(!playlist_fd) {
       E("can't open %s: %s",movie.c_str(), strerror(errno));
@@ -249,4 +256,59 @@ bool Decoder::remove(char *file) {
 bool Decoder::remove(int pos) {
   A("TODO: Decoder::remove(int pos)");
   return true;
+}
+
+int Decoder::load() {
+  FILE *fd;
+  char *home = getenv("HOME");
+  char path[512];
+  char line[1024];
+  int c = 0;
+
+  snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
+  fd = fopen(path,"r");
+  if(!fd) {
+    E("can't load from %s: %s", path, strerror(errno));
+    return -1;
+  }
+  D("reading from configuration file %s",path);
+  while(!feof(fd)) {
+    fgets(line,1023,fd);
+    if( append(line) ) {
+      c++;
+      D("%u+ %s",c,line);
+    }
+  }
+  fclose(fd);
+  return c;
+}
+  
+int Decoder::save() {
+  FILE *fd;
+  char *home = getenv("HOME");
+  char path[512];
+  int c;
+
+  vector<string>::iterator pl_iter;
+  string pl;
+
+  snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
+  fd = fopen(path,"w+");
+  if(!fd) {
+    E("can't save to %s: %s", path, strerror(errno));
+    return -1;
+  }
+  D("saving to configuration file %s",path);
+  for(c=1, pl_iter = playlist.begin();
+      pl_iter != playlist.end();
+      ++pl_iter, c++) {
+
+    pl = *pl_iter;
+    fputs(pl.c_str(),fd);
+    fputs("\n",fd);
+    D("%u. %s",c,pl.c_str());
+  }
+  fflush(fd);
+  fclose(fd);
+  return c;
 }

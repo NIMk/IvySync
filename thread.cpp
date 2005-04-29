@@ -41,6 +41,6 @@ void Thread::unlock() {
   pthread_mutex_unlock(&mutex);
 }
 
-int Thread::join() {
+void Thread::join() {
   pthread_join(thread,NULL);
 }

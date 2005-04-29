@@ -35,7 +35,7 @@ class Thread {
 
   void lock();
   void unlock();
-  int join();
+  void join();
 
  private:
 

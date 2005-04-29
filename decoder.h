@@ -60,6 +60,10 @@ class Decoder : public Thread {
   bool remove(char *file); ///< remove the first occurrence of *file
   bool remove(int pos); ///< remove the playlist entry at pos
 
+  // save on file
+  int load();
+  int save();
+
   int playmode; ///< PLAY, CONT, LOOP or RAND
   int position; ///< current position in playlist (read-only)
 
@@ -68,7 +72,11 @@ class Decoder : public Thread {
   bool playing;
   
   bool *syncstart;
-  
+
+  string device;  
+  int device_num;
+
+  vector<string> playlist;
 
  private:
   void run();
@@ -76,9 +84,9 @@ class Decoder : public Thread {
 
   void flush();
 
-  vector<string> playlist;
+
   
-  string device;
+
   int fd;
   FILE *playlist_fd;
 

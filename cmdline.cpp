@@ -26,26 +26,33 @@
 
 #include <cstdio>
 #include <iostream>
+#include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
 
 #include <decoder.h>
 #include <utils.h>
+#include <gui.h>
 
 bool syncstart = false;
 bool daemonize = false;
+bool graphical = false;
 
 // our global vector holding all instantiated decoders
 vector<Decoder*> decoders;
 
-char *short_options = "-hd:sDp:";
+// graphical interface
+Gui *gui;
+
+char *short_options = "-hd:sDp:g";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
   { "scan", no_argument, NULL, 's'},
   { "daemon", no_argument, NULL, 'D'},
   { "playmode", required_argument, NULL, 'p'},
+  { "gui", no_argument, NULL, 'g'},
   {0, 0, 0, 0}
 };
 
@@ -54,7 +61,9 @@ void quitproc (int Sig) { /* signal handling */
   N("received signal %u on process %u",Sig,getpid());  
   A("please wait while quitting threads");
   vector<Decoder*>::iterator dec_iter;
-  
+
+  if(graphical) gtk_main_quit();
+
   for( dec_iter = decoders.begin();
        dec_iter != decoders.end();
        ++dec_iter)
@@ -98,24 +107,24 @@ int cmdline(int argc, char **argv) {
       N("Scanning for available playback devices:");
       dec = new Decoder();
 
-      N("1. /dev/video16");
+
       if( dec->init("/dev/video16") )
-	A("device is present");
+	N("1. /dev/video16");
       dec->close();
 
-      N("2. /dev/video17");
+
       if( dec->init("/dev/video17") )
-	A("device is present");
+	N("2. /dev/video17");
       dec->close();
 
-      N("3. /dev/video18");
+
       if( dec->init("/dev/video18") )
-	A("device is present");
+	N("3. /dev/video18");
       dec->close();
 
-      N("4. /dev/video19");      
+
       if( dec->init("/dev/video19") )
-	A("device is present");
+	N("4. /dev/video19");
       dec->close();
 
       delete dec;
@@ -139,6 +148,10 @@ int cmdline(int argc, char **argv) {
 
     case 'D':
       daemonize = true;
+      break;
+
+    case 'g':
+      graphical = true;
       break;
 
     case 1:
@@ -188,7 +201,25 @@ int main(int argc, char **argv) {
   	E("no decoder device is initialized, aborting operations");
 	exit(0);
   }
- 
+
+  // check for graphical interface
+  if(graphical)
+    if(!getenv("DISPLAY")) {
+      graphical = false;
+      E("can't use graphical interface: no display found");
+    }
+
+  if(graphical) {
+    //  gtk_set_locale();
+    gtk_init(&argc,&argv);
+    //  add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");  
+
+    gui = new Gui();
+    gui->init(&decoders);
+    gui->start();
+
+    exit(1);
+  }
 
   for( dec_iter = decoders.begin();
        dec_iter != decoders.end();
