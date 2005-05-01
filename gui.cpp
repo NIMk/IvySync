@@ -2,10 +2,15 @@
 #include <iostream>
 #include <cstdio>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <gtk/gtk.h>
 
 #include <gui.h>
 #include <utils.h>
+
 
 #define PACKAGE_DATA_DIR "/usr/share/ivysync"
 #define CONFIGFILE "/home/jaromil/ivysyncrc"
@@ -60,6 +65,7 @@ void on_add_button(GtkWidget *widget, gpointer *data) {
   pl->refresh();
 }
 
+/*
 void on_playlist_select(GtkTreeSelection *sel, gpointer data) {
   GtkTreeIter treeiter;
   GtkTreeModel *model;
@@ -73,6 +79,7 @@ void on_playlist_select(GtkTreeSelection *sel, gpointer data) {
     pl->refresh();
   }
 }
+*/
 
 void on_save_button(GtkWidget *widget, gpointer *data) {
   Playlist *pl = (Playlist*)data;
@@ -101,7 +108,7 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
 		       Playlist *pl) {
   GtkTreeIter iter, itersrc;
   GtkTreeModel *model, *modelsrc;
-  GtkTreePath *path, *pathsrc;
+  GtkTreePath *path;
   GtkTreeSelection *selectsrc;
   GtkWidget *source;
   gint row=0, rowsrc=0;
@@ -406,8 +413,10 @@ int Playlist::refresh() {
     pl = *pl_iter;
 
     gtk_tree_store_append(treestore,&iter,NULL);
-
-    snprintf(tmp,15,"%u",c);
+    
+    snprintf(tmp,15,"%s%u",
+	     ((decoder->position-1)==c)?"->":"  ",
+	     c);
     gtk_tree_store_set(treestore,&iter,
 		       POSITION, tmp,
 		       FILENAME, pl.c_str(),

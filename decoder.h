@@ -69,6 +69,7 @@ class Decoder : public Thread {
 
   bool play();
   bool stop();
+  bool restart();
   bool playing;
   
   bool *syncstart;
@@ -77,6 +78,8 @@ class Decoder : public Thread {
   int device_num;
 
   vector<string> playlist;
+
+  bool dummy; // for dummy test run without devices
 
  private:
   void run();

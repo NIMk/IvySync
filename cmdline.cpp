@@ -38,6 +38,7 @@
 bool syncstart = false;
 bool daemonize = false;
 bool graphical = false;
+bool dummytest = false;
 
 // our global vector holding all instantiated decoders
 vector<Decoder*> decoders;
@@ -45,7 +46,7 @@ vector<Decoder*> decoders;
 // graphical interface
 Gui *gui;
 
-char *short_options = "-hd:sDp:g";
+char *short_options = "-hd:sDp:gt";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
@@ -53,6 +54,7 @@ const struct option long_options[] = {
   { "daemon", no_argument, NULL, 'D'},
   { "playmode", required_argument, NULL, 'p'},
   { "gui", no_argument, NULL, 'g'},
+  { "test", no_argument, NULL, 't'},
   {0, 0, 0, 0}
 };
 
@@ -85,15 +87,17 @@ void quitproc (int Sig) { /* signal handling */
 int cmdline(int argc, char **argv) {
   Decoder *dec = NULL;
   FILE *fd;
+  int c;
   int res;
 
   do { 
     res = getopt_long(argc, argv, short_options, long_options, NULL);
     
     switch(res) {
-      
+  
     case 'd':
       dec = new Decoder();
+      dec->dummy = dummytest;
       if( dec->init(optarg) )
 	decoders.push_back( dec );
       else {
@@ -104,30 +108,39 @@ int cmdline(int argc, char **argv) {
       break;
 
     case 's':
-      N("Scanning for available playback devices:");
+      N("Scanning for available playback devices...");
       dec = new Decoder();
+      c=0;
 
-
-      if( dec->init("/dev/video16") )
-	N("1. /dev/video16");
+      if( dec->init("/dev/video16") ) {
+	A("1. /dev/video16 is present");
+	c++;
+      }
       dec->close();
 
 
-      if( dec->init("/dev/video17") )
-	N("2. /dev/video17");
+      if( dec->init("/dev/video17") ) {
+	A("2. /dev/video17 is present");
+	c++;
+      }
       dec->close();
 
 
-      if( dec->init("/dev/video18") )
-	N("3. /dev/video18");
+      if( dec->init("/dev/video18") ) {
+	A("3. /dev/video18 is present");
+	c++;
+      }
       dec->close();
 
 
-      if( dec->init("/dev/video19") )
-	N("4. /dev/video19");
+      if( dec->init("/dev/video19") ) {
+	A("4. /dev/video19");
+	c++;
+      }
       dec->close();
 
       delete dec;
+      N("Total of %u device(s) found",c);
       exit(1);
       break;
 
@@ -153,7 +166,11 @@ int cmdline(int argc, char **argv) {
     case 'g':
       graphical = true;
       break;
-
+      
+    case 't':
+      dummytest = true;
+      break;
+      
     case 1:
       fd = fopen(optarg,"rb");
       if(fd) {

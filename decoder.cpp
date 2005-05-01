@@ -35,6 +35,7 @@ Decoder::Decoder()
   playmode = PLAY;
   position = -1;
   playing = false;
+  dummy = false;
 
   memset(buffo,0,sizeof(buffo));
 }
@@ -45,24 +46,39 @@ Decoder::~Decoder() {
 }
 
 bool Decoder::init(char *dev) {
-  fd = ::open(dev, O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
-  if(fd<0) {
-    E("error opening device %s: %s",dev,strerror(errno));
-    return false;
+  int len;
+
+  if(dummy) {
+
+    N("running in dummy test run - no device opened");
+    device = dev;
+
+  } else {
+
+    fd = ::open(dev, O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
+    if(fd<0) {
+      D("error opening device %s: %s",dev,strerror(errno));
+      return false;
+    }
+
   }
 
+  // parse the last 2 cyphers of the device path
   device = dev;
+  len = strlen(dev);
   // last two chars of the device name are the number
-  int len = strlen(dev);
   device_num = atoi(&dev[len-2]);
+
+  // try to load the playlist
+  load();
 
   return true;
 }
 
 void Decoder::close() {
   if(playing) stop();
+  quit = true;
   if(running) {
-    quit = true;
     D("thread was running, waiting to join...");
     join();
   }
@@ -109,7 +125,8 @@ string Decoder::update() {
   }
   
   res = playlist[position];
-  
+
+
   return res;  
 }
 
@@ -121,7 +138,7 @@ void Decoder::run() {
   uint8_t *buf;
 
 
-  if(!fd) {
+  if(!fd && !dummy) {
     E("thread %u falling down: no device opened",pthread_self());
     return;
   }
@@ -175,8 +192,11 @@ void Decoder::run() {
       while(writing) { // writing loop
 	
 	buf += written;
-	
-	written = ::write(fd, buf, writing);
+
+	if(dummy) // emulation mode with no device (for devel)
+	  written = writing; 
+	else
+	  written = ::write(fd, buf, writing);
 
 	if(written<0) // error on write
 	  continue;
@@ -220,6 +240,11 @@ bool Decoder::stop() {
   playing = false;
   return playing;
 }
+bool Decoder::restart() {
+  playing = false;
+  position = 0;
+  return true;
+}
 
 bool Decoder::prepend(char *file) {
   playlist.insert( playlist.begin(), file );
@@ -260,20 +285,28 @@ bool Decoder::remove(int pos) {
 
 int Decoder::load() {
   FILE *fd;
-  char *home = getenv("HOME");
   char path[512];
   char line[1024];
   int c = 0;
+  struct stat st;
+
+  char *home = getenv("HOME");
+  snprintf(path,511,"%s/.ivysync",home);
+  if( stat(path, &st) != 0) {
+    D("no saved playlists in %s: %s",path,strerror(errno));
+    return -1;
+  }
 
   snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
   fd = fopen(path,"r");
   if(!fd) {
-    E("can't load from %s: %s", path, strerror(errno));
+    E("can't load playlist %s: %s", path, strerror(errno));
     return -1;
   }
   D("reading from configuration file %s",path);
   while(!feof(fd)) {
     fgets(line,1023,fd);
+    chomp(line);
     if( append(line) ) {
       c++;
       D("%u+ %s",c,line);
@@ -282,15 +315,26 @@ int Decoder::load() {
   fclose(fd);
   return c;
 }
-  
+
 int Decoder::save() {
   FILE *fd;
   char *home = getenv("HOME");
   char path[512];
   int c;
+  struct stat st;
 
   vector<string>::iterator pl_iter;
   string pl;
+
+  // create the configuration directory if doesn't exist
+  snprintf(path,511,"%s/.ivysync",home);
+  if( stat(path, &st) != 0) {
+    if(errno==ENOENT) mkdir(path,0744);
+    else {
+      E("error saving in %s: %s",path, strerror(errno));
+      return -1;
+    }
+  }
 
   snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
   fd = fopen(path,"w+");

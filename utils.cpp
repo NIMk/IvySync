@@ -103,3 +103,26 @@ void jsleep(int sec, long nsec) {
   timelap.tv_nsec = nsec;
   nanosleep(&timelap,NULL);
 }
+
+// jaromil's chomp
+#define MAX_CHOMP_SIZE 1024
+void chomp(char *str) {
+  size_t len; //, ilen;
+  char tmp[MAX_CHOMP_SIZE], *p = str;
+  
+  memset(tmp,'\0',MAX_CHOMP_SIZE);
+  
+  /* eliminate space and tabs at the beginning */
+  while (*p == ' ' || *p == '\t') p++;
+  strncpy(tmp, p, MAX_CHOMP_SIZE);
+  
+  /* point *p at the end of string */
+  len = strlen(tmp); 
+  p = &tmp[len-1];
+  
+  while ((*p == ' ' || *p == '\t' || *p == '\n') && len) {
+    *p = '\0'; p--; len--;
+  }
+
+  strncpy(str, tmp, MAX_CHOMP_SIZE);
+}

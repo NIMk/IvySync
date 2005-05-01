@@ -32,6 +32,8 @@ void D(char *format, ...);
 
 void jsleep(int sec, long nsec);
 
+void chomp(char *str);
+
 #endif
 
 
