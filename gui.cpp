@@ -96,16 +96,88 @@ void on_play_button(GtkWidget *widget, gpointer *data) {
   }
 }
 
+void on_rewind_button(GtkWidget *widget, gpointer *data) {
+  Playlist *pl = (Playlist*)data;
+  pl->decoder->stop();
+  pl->decoder->position = 0;
+  pl->refresh();
+}
+
+void on_delete_button(GtkWidget *widget, gpointer *data) {
+  GtkTreeSelection *select;
+  GtkTreeModel *model;
+  GtkTreeIter iter;
+  GList *rowlist;
+  char *pos, *p;
+  int numpos;
+
+  Playlist *pl = (Playlist*)data;
+
+  // get out a rowlist of selections
+  model = gtk_tree_view_get_model(GTK_TREE_VIEW(pl->treeview));
+  select = gtk_tree_view_get_selection(GTK_TREE_VIEW(pl->treeview));
+  rowlist = gtk_tree_selection_get_selected_rows(select, &model);
+
+  rowlist = g_list_reverse(rowlist);
+  rowlist = g_list_first(rowlist);
+
+  // fill in filelist with all the selected FILENAME entries
+  if(rowlist->data) {
+
+    while(rowlist && rowlist->data) {
+
+      gtk_tree_model_get_iter(model, &iter, (GtkTreePath*)rowlist->data);
+      gtk_tree_model_get(model, &iter, POSITION, &pos, -1);
+      
+      // strip out the -> selection
+      for(p = pos; *p!='\0'; p++)
+	if(!isdigit(*p)) *p=' ';
+
+
+      numpos = atoi(pos);
+
+      D("removing playlist entry at pos %u",numpos);
+      pl->decoder->remove(numpos);
+
+      g_free(pos); // free the char*
+      gtk_tree_path_free((GtkTreePath*)rowlist->data); // free the path
+
+      rowlist = g_list_next(rowlist);
+    }
+  }
+  
+  // free the rowlist
+  g_list_free(rowlist);
+  
+  pl->refresh();
+}
+
+
+void on_set_playmode(GtkWidget *w, gpointer *data) {
+  Playlist *pl = (Playlist*)data;
+  gint mode;
+  if((mode = gtk_option_menu_get_history(GTK_OPTION_MENU(w))) != -1)
+    pl->decoder->playmode = mode+1;
+  D("playmode set to %u",mode+1);
+}
+
+void DND_begin(GtkWidget *w, GdkDragContext *dc, gpointer *data) { D("drag begin"); }
+void DND_end(GtkWidget *w, GdkDragContext *dc, gpointer *data) { D("drag end"); }
+gboolean DND_data_get(GtkWidget *w, GdkDragContext *dc, 
+		      GtkSelectionData *selection, guint info, gpointer *data) {
+  return TRUE;
+}
+
 gboolean DND_data_motion(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
-				guint t, struct gchan *o) {
+				guint t, gpointer *data) {
   gdk_drag_status(dc, GDK_ACTION_MOVE, t);
-  D("drag_data_motion");
+  //  D("drag_data_motion");
   return FALSE;
 }
 
 void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
 		       GtkSelectionData *selection, guint info, guint t,
-		       Playlist *pl) {
+		       gpointer *data) {
   GtkTreeIter iter, itersrc;
   GtkTreeModel *model, *modelsrc;
   GtkTreePath *path;
@@ -114,7 +186,8 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
   gint row=0, rowsrc=0;
   gchar *title;
   GList *rowlist, *titlelist;
-  
+
+  Playlist *pl = (Playlist*)data;
   
   /* <federico> nightolo: if gtk_drag_get_source_widget(drag_context) returns NULL,
    * it comes from another process
@@ -131,7 +204,7 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
   modelsrc = gtk_tree_view_get_model(GTK_TREE_VIEW(source));
   selectsrc = gtk_tree_view_get_selection(GTK_TREE_VIEW(source));
   rowlist = gtk_tree_selection_get_selected_rows(selectsrc, &modelsrc);
-  titlelist = NULL;
+  titlelist = NULL;;
   
   rowlist = g_list_first(rowlist);
   if(rowlist->data) {
@@ -141,14 +214,19 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
       gtk_tree_model_get(modelsrc, &itersrc, FILENAME, &title, -1);
       
       titlelist = g_list_append(titlelist, (void *) title);
+
+      gtk_tree_path_free((GtkTreePath *)rowlist->data);      
+
       rowlist = g_list_next(rowlist);
-      //		gtk_tree_path_free((GtkTreePath *)rowlist->data);
+
       
     }
     D("DND_data_received I part -> ok");
   } else
     return;
-  
+
+  // free the rowlist
+  g_list_free(rowlist);
   
   if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(w),
 				   x, y, &path, NULL, NULL, NULL)) {
@@ -162,7 +240,6 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
 	mixer->add_to_playlist(o->idx-1, title);
 	} else {*/
   
-  rowlist = g_list_first(rowlist);
   for(; titlelist != NULL; row++ && rowsrc++) {
     D("riga %d", row);
     gtk_list_store_insert(GTK_LIST_STORE(model), &iter, row);
@@ -173,10 +250,14 @@ void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
     pl->decoder->insert((char*)titlelist->data,row+1);
     // delete old
     pl->decoder->remove(rowsrc+1);
-    
+
+    g_free(titlelist->data); // free the allocated path string
+
     titlelist = g_list_next(titlelist);		
   }
-  //}
+
+  g_list_free(titlelist); // free the title list
+
   pl->refresh();
   D("drag_data_received");
 }
@@ -259,7 +340,9 @@ Playlist::Playlist(int num) {
   gtk_widget_set_name (delete_button, delete_button_name);
   gtk_widget_show (delete_button);
   gtk_box_pack_start (GTK_BOX (buttonbox), delete_button, FALSE, FALSE, 0);
+  g_signal_connect((gpointer)delete_button, "pressed", G_CALLBACK(on_delete_button), this);
 
+  /*
   up_button = gtk_button_new ();
   snprintf(up_button_name,255,"up_button_%u",num);
   gtk_widget_set_name (up_button, up_button_name);
@@ -283,6 +366,19 @@ Playlist::Playlist(int num) {
   gtk_widget_set_name (image3, image3_name);
   gtk_widget_show (image3);
   gtk_container_add (GTK_CONTAINER (down_button), image3);
+  */
+
+  rewind_button = gtk_button_new();
+  snprintf(rewind_button_name,255,"rewind_button_%u",num);
+  gtk_widget_set_name(rewind_button, rewind_button_name);
+  gtk_widget_show(rewind_button);
+  gtk_box_pack_start(GTK_BOX(buttonbox), rewind_button, FALSE, FALSE, 0);
+  rewind_image = gtk_image_new_from_stock("gtk-media-previous", GTK_ICON_SIZE_BUTTON);
+  snprintf(rewind_image_name,255,"rewind_image_%u",num);
+  gtk_widget_set_name(rewind_image, rewind_image_name);
+  gtk_widget_show(rewind_image);
+  gtk_container_add(GTK_CONTAINER(rewind_button), rewind_image);
+  g_signal_connect((gpointer)rewind_button, "pressed", G_CALLBACK(on_rewind_button), this);
 
   play_button = gtk_toggle_button_new_with_mnemonic ("gtk-media-play");
   gtk_button_set_use_stock (GTK_BUTTON (play_button), TRUE);
@@ -291,6 +387,28 @@ Playlist::Playlist(int num) {
   gtk_widget_show (play_button);
   gtk_box_pack_start (GTK_BOX (buttonbox), play_button, FALSE, FALSE, 0);
   g_signal_connect((gpointer)play_button, "pressed", G_CALLBACK(on_play_button), this);
+
+  {
+    GtkWidget *tmpwid;
+    playmode_menu = gtk_menu_new();
+    tmpwid = gtk_menu_item_new_with_label("once");
+    gtk_menu_append(GTK_MENU(playmode_menu), tmpwid);
+    gtk_widget_show(tmpwid);
+    tmpwid = gtk_menu_item_new_with_label("loop");
+    gtk_menu_append(GTK_MENU(playmode_menu), tmpwid);
+    gtk_widget_show(tmpwid);
+    tmpwid = gtk_menu_item_new_with_label("continuous");
+    gtk_menu_append(GTK_MENU(playmode_menu), tmpwid);
+    gtk_widget_show(tmpwid);
+    gtk_widget_show(playmode_menu);
+
+    playmode_menuopt = gtk_option_menu_new();
+    gtk_option_menu_set_menu(GTK_OPTION_MENU(playmode_menuopt), playmode_menu);
+    gtk_widget_show(playmode_menuopt);
+    gtk_box_pack_start (GTK_BOX (buttonbox), playmode_menuopt, TRUE, TRUE, 0);
+
+    g_signal_connect(G_OBJECT(playmode_menuopt), "changed", G_CALLBACK(on_set_playmode), this);
+  }    
 
   save_button = gtk_button_new_from_stock ("gtk-save");
   snprintf(save_button_name,255,"save_button_%u",num);
@@ -321,7 +439,6 @@ Playlist::Playlist(int num) {
 
   
   { // then the drag and drop stuff
-    GtkTargetEntry target_entry[3];
     target_entry[0].target = DRAG_TAR_NAME_0;
     target_entry[0].flags = 0;
     target_entry[0].info = DRAG_TAR_INFO_0;
@@ -338,29 +455,18 @@ Playlist::Playlist(int num) {
        (GtkDestDefaults)(GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_HIGHLIGHT | GTK_DEST_DEFAULT_DROP),
        target_entry,sizeof(target_entry) / sizeof(GtkTargetEntry),
        GDK_ACTION_MOVE);
-
+    g_signal_connect(G_OBJECT(treeview), "drag_motion", G_CALLBACK(DND_data_motion), this);
     gtk_drag_source_set
       (treeview,
        (GdkModifierType) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK),
        target_entry, sizeof(target_entry) / sizeof(GtkTargetEntry),
        GDK_ACTION_MOVE);
-    g_signal_connect(G_OBJECT(treeview), "drag_motion",
-		     G_CALLBACK(DND_data_motion), this);
-    
-    //    g_signal_connect(G_OBJECT(tree), "drag_begin",
-    //		     G_CALLBACK(DND_begin), this);
 
-    //	g_signal_connect(G_OBJECT(tree), "drag_end",
-    //			G_CALLBACK(DND_end), this);
-
-    //	g_signal_connect(G_OBJECT(tree), "drag_data_get",
-    //			G_CALLBACK(DND_data_get), this);
-
-    g_signal_connect(G_OBJECT(treeview), "drag_data_received",
-		     G_CALLBACK(DND_data_received), this);
-
-    g_signal_connect(G_OBJECT(treeview), "drag_data_delete",
-		     G_CALLBACK(DND_data_delete), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_begin", G_CALLBACK(DND_begin), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_end", G_CALLBACK(DND_end), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_data_get", G_CALLBACK(DND_data_get), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_data_received", G_CALLBACK(DND_data_received), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_data_delete", G_CALLBACK(DND_data_delete), this);
   }
 
   { // and finally the cell rendering
@@ -415,7 +521,7 @@ int Playlist::refresh() {
     gtk_tree_store_append(treestore,&iter,NULL);
     
     snprintf(tmp,15,"%s%u",
-	     ((decoder->position-1)==c)?"->":"  ",
+	     ((decoder->position+1)==c)?"->":"  ",
 	     c);
     gtk_tree_store_set(treestore,&iter,
 		       POSITION, tmp,
@@ -470,6 +576,8 @@ bool Gui::init(vector<Decoder*> *devices) {
     pl = new Playlist(c);
 
     pl->decoder = dec; // store the decoder pointer in the playlist
+    dec->gui = pl; // store the GUI pointer in the decoder (cross reference)
+
     pl->refresh(); // refresh with the filenames
     playlist.push_back(pl); // store the playlist in the gui array
     

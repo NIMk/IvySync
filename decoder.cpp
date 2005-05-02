@@ -28,6 +28,7 @@
 
 #include <decoder.h>
 #include <utils.h>
+#include <gui.h>
 
 Decoder::Decoder()
   : Thread() {
@@ -36,6 +37,7 @@ Decoder::Decoder()
   position = -1;
   playing = false;
   dummy = false;
+  gui = false;
 
   memset(buffo,0,sizeof(buffo));
 }
@@ -85,9 +87,7 @@ void Decoder::close() {
   if(fd) ::close(fd);
 }
 
-string Decoder::update() {
-  string res;
-
+void Decoder::update() {
   if(position<0) { // first time we play from the playlist
     position = 0;
   } else {
@@ -124,19 +124,19 @@ string Decoder::update() {
 
   }
   
-  res = playlist[position];
+  // current movie is now in playlist[position];
 
+  // refresh the GUI if present
+  if(gui) gui->refresh();
 
-  return res;  
 }
 
 
 
 void Decoder::run() {
-  string movie;
   int in, written, writing;
   uint8_t *buf;
-
+  string movie;
 
   if(!fd && !dummy) {
     E("thread %u falling down: no device opened",pthread_self());
@@ -149,6 +149,7 @@ void Decoder::run() {
 
   while(!quit) {
 
+    update();
 
     // if is not playling, sleep
     while(!playing && !quit)
@@ -156,25 +157,30 @@ void Decoder::run() {
     if(quit) break;
     ///////////////////////////
 
-    movie = update();
-    
+    movie = playlist[position];
+
     playlist_fd = fopen( movie.c_str(), "rb" );
     if(!playlist_fd) {
-      E("can't open %s: %s",movie.c_str(), strerror(errno));
+      E("can't open %s: %s", movie.c_str(), strerror(errno));
       update();
       continue;
     }
 
+    N("now playing %s",movie.c_str());
+
     do { // inner reading loop
 
+      // update the GUI
+      if(gui) gui->refresh();
+      
       // if is not playling, sleep
-      while(!playing && !quit)
-	jsleep(0,1);
+      while(!playing && !quit) {
+	jsleep(0,200);
+      }
       if(quit) break;
       ///////////////////////////
 
       in = fread(buffo, 1, CHUNKSIZE, playlist_fd);
-      
       if( feof(playlist_fd) || in<1 ) { // EOF
 	D("end of file: %s",movie.c_str());
 	break;
@@ -279,8 +285,18 @@ bool Decoder::remove(char *file) {
   return true;
 }
 bool Decoder::remove(int pos) {
-  A("TODO: Decoder::remove(int pos)");
-  return true;
+  vector<string>::iterator pl_iter;
+  int c;
+
+  for( pl_iter = playlist.begin(), c=1;
+       pl_iter != playlist.end();
+       ++pl_iter, c++ )
+    if(c==pos) {
+      playlist.erase(pl_iter);
+      return true;
+    }
+
+  return false;
 }
 
 int Decoder::load() {

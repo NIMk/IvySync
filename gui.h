@@ -20,6 +20,8 @@ class Playlist {
 
   int selected;
 
+  GtkWidget *treeview;
+
  private:
   // rendered widget names
   char widget_name[256];
@@ -35,10 +37,11 @@ class Playlist {
   char image3_name[256];
   char save_button_name[256];
   char statusbar_name[256];
-  // widget pointers
-  GtkWidget *treeview;
-  GtkTreeStore *treestore;
+  char rewind_button_name[256];
+  char rewind_image_name[256];
 
+  // widget pointers
+  GtkTreeStore *treestore;
 
   GtkWidget *scrolledwindow;
   GtkWidget *buttonbox;
@@ -51,6 +54,12 @@ class Playlist {
   GtkWidget *image3;
   GtkWidget *save_button;
   GtkWidget *statusbar;
+  GtkWidget *playmode_menu;
+  GtkWidget *playmode_menuopt;
+  GtkWidget *rewind_button;
+  GtkWidget *rewind_image;
+  GtkTargetEntry target_entry[3];
+
   
 };
 

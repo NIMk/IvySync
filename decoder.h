@@ -43,6 +43,8 @@ using namespace __gnu_cxx;
 // size of video chunks read in bytes
 #define CHUNKSIZE (1024*64)
 
+class Playlist; // graphical interface
+
 class Decoder : public Thread {
 
  public:
@@ -66,6 +68,7 @@ class Decoder : public Thread {
 
   int playmode; ///< PLAY, CONT, LOOP or RAND
   int position; ///< current position in playlist (read-only)
+  string current; ///< path of movie currently playing
 
   bool play();
   bool stop();
@@ -79,11 +82,13 @@ class Decoder : public Thread {
 
   vector<string> playlist;
 
+  Playlist *gui; ///< pointer to the GUI, NULL if none
+
   bool dummy; // for dummy test run without devices
 
  private:
   void run();
-  string update();
+  void update();
 
   void flush();
 

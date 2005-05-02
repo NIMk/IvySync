@@ -26,6 +26,9 @@ ivysync: $(OBJ)
 clean:
 	rm -rf *.o *~ ivysync
 
+install: ivysync
+	install ivysync /usr/local/bin
+
 # generic make rules
 #%: %.c
 #	$(CC) $(CFLAGS) -o $@ $< $(LIBS)

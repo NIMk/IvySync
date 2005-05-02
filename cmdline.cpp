@@ -249,12 +249,10 @@ int main(int argc, char **argv) {
 
   }
   
-  N("%i players to sync",decoders.size());
+  N("Syncing %i players...",decoders.size());
 	
-  
-  fprintf(stderr,"Waiting 1 second before startup...");
   jsleep(1,0);
-  fprintf(stderr," GO!\n");
+  A("Start!");
   syncstart = 1;
 
   int still_running = decoders.size();
