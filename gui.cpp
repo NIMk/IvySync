@@ -163,8 +163,94 @@ void on_set_playmode(GtkWidget *w, gpointer *data) {
 
 void DND_begin(GtkWidget *w, GdkDragContext *dc, gpointer *data) { D("drag begin"); }
 void DND_end(GtkWidget *w, GdkDragContext *dc, gpointer *data) { D("drag end"); }
+
 gboolean DND_data_get(GtkWidget *w, GdkDragContext *dc, 
-		      GtkSelectionData *selection, guint info, gpointer *data) {
+		      GtkSelectionData *selection, guint info, guint t, gpointer *data) {
+
+  GtkTreeIter iter;
+  GtkTreeModel *model;
+  GtkTreeSelection *select;
+  //  gint row=0;
+  gchar *title;
+  GList *rowlist;
+
+  Playlist *pl = (Playlist*)data;
+
+  model = gtk_tree_view_get_model(GTK_TREE_VIEW(w));
+  select = gtk_tree_view_get_selection(GTK_TREE_VIEW(w));
+  rowlist = gtk_tree_selection_get_selected_rows(select, &model);
+
+  rowlist = g_list_first(rowlist);
+  if(rowlist->data) {
+    //    rowsrc = gtk_tree_path_get_indices((GtkTreePath *)rowlist->data)[0];
+    while(rowlist && rowlist->data) {
+      gtk_tree_model_get_iter(model, &iter, (GtkTreePath *)rowlist->data);
+      gtk_tree_model_get(model, &iter, POSITION, &title, -1);
+      
+      pl->draglist = g_list_append(pl->draglist, (void *) title);
+      D("dragging entry at position %s",title);
+      //      gtk_tree_path_free((GtkTreePath *)rowlist->data);      
+
+      rowlist = g_list_next(rowlist);
+    }
+  } else
+    return FALSE;
+
+  // free the rowlist
+  g_list_free(rowlist);
+
+  return TRUE;
+}
+
+gboolean DND_drop(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
+		  guint t, gpointer *data) {
+
+  GtkTreePath *path;
+  gint row =0;
+  char *p;
+  int numpos;
+  Playlist *pl = (Playlist*)data;
+
+  if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(w),
+				   x, y, &path, NULL, NULL, NULL)) {
+    row = gtk_tree_path_get_indices(path)[0];
+    D("DND drop on row = %d", row);
+    gtk_tree_path_free(path);
+  }
+
+  g_list_first(pl->draglist);
+  if(!pl->draglist || !pl->draglist->data) return FALSE;
+
+  while(pl->draglist) {
+
+    if(row) { // if there is a place where to move it
+
+      // strip out the -> selection and get the position
+      for(p = (char*)pl->draglist->data; *p!='\0'; p++)
+	if(!isdigit(*p)) *p=' ';
+      numpos = atoi((char*)pl->draglist->data);
+      D("move entry %u:%s into slot %u",numpos, (char*)pl->decoder->playlist[numpos-1].c_str(),row+1);
+      numpos--;
+
+      if(row>numpos) row++;
+
+      pl->decoder->insert
+	( (char*)pl->decoder->playlist[numpos].c_str(), row );
+
+      if(row<numpos) numpos++; // if moves up then the source shifts down one pos
+
+      pl->decoder->remove(numpos+1);
+
+    }
+
+    //  g_free(pl->draglist->data);
+    pl->draglist = g_list_next(pl->draglist);
+  }
+  
+  //  g_list_free(pl->draglist);
+  //  pl->draglist = NULL;
+
+  pl->refresh();
   return TRUE;
 }
 
@@ -175,127 +261,6 @@ gboolean DND_data_motion(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
   return FALSE;
 }
 
-void DND_data_received(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
-		       GtkSelectionData *selection, guint info, guint t,
-		       gpointer *data) {
-  GtkTreeIter iter, itersrc;
-  GtkTreeModel *model, *modelsrc;
-  GtkTreePath *path;
-  GtkTreeSelection *selectsrc;
-  GtkWidget *source;
-  gint row=0, rowsrc=0;
-  gchar *title;
-  GList *rowlist, *titlelist;
-
-  Playlist *pl = (Playlist*)data;
-  
-  /* <federico> nightolo: if gtk_drag_get_source_widget(drag_context) returns NULL,
-   * it comes from another process
-   * tnx to #gtk+ :) 
-   */
-  D("DND_data_received");	
-  if( !(source = gtk_drag_get_source_widget(dc)) ) {
-    E("DND_data_received error: no source");
-    return;
-  }
-  D("source = %p info %d", source, info);
-  
-  model = gtk_tree_view_get_model(GTK_TREE_VIEW(w));
-  modelsrc = gtk_tree_view_get_model(GTK_TREE_VIEW(source));
-  selectsrc = gtk_tree_view_get_selection(GTK_TREE_VIEW(source));
-  rowlist = gtk_tree_selection_get_selected_rows(selectsrc, &modelsrc);
-  titlelist = NULL;;
-  
-  rowlist = g_list_first(rowlist);
-  if(rowlist->data) {
-    rowsrc = gtk_tree_path_get_indices((GtkTreePath *)rowlist->data)[0];
-    while(rowlist && rowlist->data) {
-      gtk_tree_model_get_iter(modelsrc, &itersrc, (GtkTreePath *)rowlist->data);
-      gtk_tree_model_get(modelsrc, &itersrc, FILENAME, &title, -1);
-      
-      titlelist = g_list_append(titlelist, (void *) title);
-
-      gtk_tree_path_free((GtkTreePath *)rowlist->data);      
-
-      rowlist = g_list_next(rowlist);
-
-      
-    }
-    D("DND_data_received I part -> ok");
-  } else
-    return;
-
-  // free the rowlist
-  g_list_free(rowlist);
-  
-  if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(w),
-				   x, y, &path, NULL, NULL, NULL)) {
-    row = gtk_tree_path_get_indices(path)[0];
-    D("DND_data_received row = %d", row);
-    gtk_tree_path_free(path);
-  }
-  
-  /*	if(!source && (info == DRAG_TAR_INFO_1 || info == DRAG_TAR_INFO_0)) {
-	func("I got text/uri");
-	mixer->add_to_playlist(o->idx-1, title);
-	} else {*/
-  
-  for(; titlelist != NULL; row++ && rowsrc++) {
-    D("riga %d", row);
-    gtk_list_store_insert(GTK_LIST_STORE(model), &iter, row);
-    gtk_list_store_set(GTK_LIST_STORE(model), &iter,
-		       FILENAME, titlelist->data, -1);
-    
-    // insert
-    pl->decoder->insert((char*)titlelist->data,row+1);
-    // delete old
-    pl->decoder->remove(rowsrc+1);
-
-    g_free(titlelist->data); // free the allocated path string
-
-    titlelist = g_list_next(titlelist);		
-  }
-
-  g_list_free(titlelist); // free the title list
-
-  pl->refresh();
-  D("drag_data_received");
-}
-
-void DND_data_delete(GtkWidget *w, GdkDragContext *dc, Playlist *pl) {
-	GtkTreeIter iter;
-	GtkTreeModel *model;
-	GtkTreeSelection *select;
-	GtkTreePath *path;
-	GtkTreeRowReference *ref;
-	gint row;
-	GList *pathlist, *reflist;
-	
-	select = gtk_tree_view_get_selection(GTK_TREE_VIEW(w));
-	pathlist = gtk_tree_selection_get_selected_rows(select, &model);
-	reflist = NULL;
-	
-	while(pathlist) {
-		ref = gtk_tree_row_reference_new(model, (GtkTreePath *)pathlist->data);
-		reflist = g_list_append(reflist, (void *) ref);
-		pathlist = g_list_next(pathlist);
-	}
-	reflist = g_list_first(reflist);
-	while(reflist) {
-		path = gtk_tree_row_reference_get_path((GtkTreeRowReference *)reflist->data);
-		row = gtk_tree_path_get_indices(path)[0];
-		if(gtk_tree_model_get_iter(model, &iter, path)) {
-		  gtk_list_store_remove(GTK_LIST_STORE(model), &iter);
-		}
-		gtk_tree_path_free(path);
-		reflist = g_list_next(reflist);
-		
-	}
-	
-	D("drag_data_delete");
-}
-
-
 
 
 ////////////////// PLAYLIST WIDGET CLASS
@@ -303,6 +268,7 @@ void DND_data_delete(GtkWidget *w, GdkDragContext *dc, Playlist *pl) {
 Playlist::Playlist(int num) {
 
   selected = 0;
+  draglist = NULL;
 
   widget = gtk_vbox_new (FALSE, 0);
   snprintf(widget_name,255,"widget_%u",num);
@@ -312,6 +278,8 @@ Playlist::Playlist(int num) {
   scrolledwindow = gtk_scrolled_window_new (NULL, NULL);
   snprintf(scrolledwindow_name,255,"scrolledwindow_%u",num);
   gtk_widget_set_name (scrolledwindow, scrolledwindow_name);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwindow),
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
   gtk_widget_show (scrolledwindow);
   gtk_box_pack_start (GTK_BOX (widget), scrolledwindow, TRUE, TRUE, 0);
   gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolledwindow), GTK_SHADOW_IN);
@@ -450,23 +418,27 @@ Playlist::Playlist(int num) {
     target_entry[2].target = DRAG_TAR_NAME_2;
     target_entry[2].flags = 0;
     target_entry[2].info = DRAG_TAR_INFO_2;
-    gtk_drag_dest_set
-      (treeview,
-       (GtkDestDefaults)(GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_HIGHLIGHT | GTK_DEST_DEFAULT_DROP),
-       target_entry,sizeof(target_entry) / sizeof(GtkTargetEntry),
-       GDK_ACTION_MOVE);
-    g_signal_connect(G_OBJECT(treeview), "drag_motion", G_CALLBACK(DND_data_motion), this);
+
     gtk_drag_source_set
       (treeview,
        (GdkModifierType) (GDK_BUTTON1_MASK | GDK_BUTTON2_MASK),
        target_entry, sizeof(target_entry) / sizeof(GtkTargetEntry),
-       GDK_ACTION_MOVE);
-
+       (GdkDragAction)GDK_ACTION_MOVE );
+//    g_signal_connect(G_OBJECT(treeview), "drag_motion", G_CALLBACK(DND_data_motion), this);
     g_signal_connect(G_OBJECT(treeview), "drag_begin", G_CALLBACK(DND_begin), this);
     g_signal_connect(G_OBJECT(treeview), "drag_end", G_CALLBACK(DND_end), this);
     g_signal_connect(G_OBJECT(treeview), "drag_data_get", G_CALLBACK(DND_data_get), this);
-    g_signal_connect(G_OBJECT(treeview), "drag_data_received", G_CALLBACK(DND_data_received), this);
-    g_signal_connect(G_OBJECT(treeview), "drag_data_delete", G_CALLBACK(DND_data_delete), this);
+    g_signal_connect(G_OBJECT(treeview), "drag_drop", G_CALLBACK(DND_drop), this);
+//    g_signal_connect(G_OBJECT(treeview), "drag_data_delete", G_CALLBACK(DND_data_delete), this);
+
+    gtk_drag_dest_set
+      (treeview,
+       //       (GtkDestDefaults)(GTK_DEST_DEFAULT_ALL),
+       (GtkDestDefaults)(GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_HIGHLIGHT | GTK_DEST_DEFAULT_DROP),
+       target_entry, sizeof(target_entry) / sizeof(GtkTargetEntry),
+       (GdkDragAction)GDK_ACTION_MOVE );
+//    g_signal_connect(G_OBJECT(treeview), "drag_data_received", G_CALLBACK(DND_data_received), this);
+
   }
 
   { // and finally the cell rendering

@@ -22,6 +22,9 @@ class Playlist {
 
   GtkWidget *treeview;
 
+  GList *draglist;
+  bool draglock;
+
  private:
   // rendered widget names
   char widget_name[256];
@@ -59,8 +62,6 @@ class Playlist {
   GtkWidget *rewind_button;
   GtkWidget *rewind_image;
   GtkTargetEntry target_entry[3];
-
-  
 };
 
 class Gui {

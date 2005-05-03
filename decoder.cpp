@@ -280,10 +280,12 @@ bool Decoder::insert(char *file, int pos) {
   return true;
 }
 
+/*
 bool Decoder::remove(char *file) {
   A("TODO: Decoder::remove(char *file)");
   return true;
 }
+*/
 bool Decoder::remove(int pos) {
   vector<string>::iterator pl_iter;
   int c;
@@ -320,8 +322,9 @@ int Decoder::load() {
     return -1;
   }
   D("reading from configuration file %s",path);
-  while(!feof(fd)) {
-    fgets(line,1023,fd);
+  while( fgets(line,1023,fd) ) {
+    if( feof(fd) ) break;
+
     chomp(line);
     if( append(line) ) {
       c++;

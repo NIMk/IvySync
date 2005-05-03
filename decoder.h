@@ -59,7 +59,7 @@ class Decoder : public Thread {
   bool prepend(char *file); ///< prepend *file at the beginning of the playlist
   bool append(char *file); ///< append *file at the end of the playlist
   bool insert(char *file, int pos); ///< insert *file in playlist at pos
-  bool remove(char *file); ///< remove the first occurrence of *file
+  //  bool remove(char *file); ///< remove the first occurrence of *file
   bool remove(int pos); ///< remove the playlist entry at pos
 
   // save on file
