@@ -1,0 +1,74 @@
+          ,-_/          .---.             
+          '  | .  , . . \___  . . ,-. ,-. 
+          .^ | | /  | |     \ | | | | |   
+          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.2]
+                     /|        /|         
+                    `-'       `-'    by Denis "jaromil" Rojo
+		                     Montevideo Artlab R&D
+
+
+IvySync provides synced playback of multiple videos on multiple screens
+
+In the video art field there are many artworks requiring the synced and
+parallel  playback  of  audio/video  materials:  IvySync  provides such
+functionality  for  IvyTV  supported  hardware  decoders, with accurate
+frame precision. 
+
+With the 0.2 release IvySync now reaches to sync up to 4 video channels
+with  frame precision and comes together with a user friendly graphical
+interface (GTK2) to edit the playlists. 
+
+
+== list of features
+
+    * full quality s/video or composite multiple output 
+
+    * professional grade low cost solution 
+
+    * remotely controllable playback 
+
+    * Graphical interface for playlist scheduling 
+
+    * extensible, scriptable and reliable *NIX technology 
+
+    * frame accurate sync of DVD quality audio/video 
+
+    * streaming playback from a local network 
+
+    * capable of syncing up to 4 videos 
+
+
+== requirements
+
+    * GNU/Linux supported platform with ~500Mhz CPU 
+
+    * IvyTV compatible hardware decoder 
+
+    * fairly good experience with *NIX systems 
+
+
+
+Visit  the  website  for  more  documentation, screenshots and download
+http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
+
+
+
+# IvySync is Copyright (C) 2004-2005 by Denis "Jaromil" Rojo
+
+# This source code is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Public License as published 
+# by the Free Software Foundation; either version 2 of the License,
+# or (at your option) any later version.
+#
+# This source code is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# Please refer to the GNU Public License for more details.
+#
+# You should have received a copy of the GNU Public License along with
+# this source code; if not, write to:
+# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+
+
