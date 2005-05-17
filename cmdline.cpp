@@ -46,6 +46,16 @@ vector<Decoder*> decoders;
 // graphical interface
 Gui *gui;
 
+char *help =
+"Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
+"  -h --help      show this help\n"
+"  -d --device    activate a device (i.e. /dev/video16)\n"
+"  -s --scan      scan for available devices\n"
+"  -D --daemon    run in daemon mode\n"
+"  -p --playmode  playlist mode (play|cont|loop|rand)\n"
+"  -g --gui       start the graphical user interface\n"
+"  -t --test      dummy testrun: don't open devices\n";
+
 char *short_options = "-hd:sDp:gt";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
@@ -90,11 +100,18 @@ int cmdline(int argc, char **argv) {
   int c;
   int res;
 
+  N("IvySync 0.2 / (c)2004-2005 Denis Rojo <jaromil@dyne.org>");
+
   do { 
     res = getopt_long(argc, argv, short_options, long_options, NULL);
     
     switch(res) {
-  
+      
+    case 'h':
+      fprintf(stderr,"%s",help);
+      exit(1);
+      break;
+
     case 'd':
       dec = new Decoder();
       dec->dummy = dummytest;
@@ -251,9 +268,13 @@ int main(int argc, char **argv) {
   
   N("Syncing %i players...",decoders.size());
 	
-  jsleep(1,0);
+  jsleep(0,500);
   A("Start!");
   syncstart = 1;
+  //  jsleep(0,2);
+  //  syncstart = 0;
+  //  jsleep(0,500);
+  //  syncstart = 1;
 
   int still_running = decoders.size();
   
@@ -266,7 +287,7 @@ int main(int argc, char **argv) {
       
       dec = *dec_iter;
       if(dec->playing) still_running++;
-
+      jsleep(1,0); // 1 second delay check
     }
   }
 

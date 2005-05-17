@@ -65,25 +65,33 @@ void on_add_button(GtkWidget *widget, gpointer *data) {
   pl->refresh();
 }
 
-/*
-void on_playlist_select(GtkTreeSelection *sel, gpointer data) {
-  GtkTreeIter treeiter;
-  GtkTreeModel *model;
-  int *selection;
-  Playlist *pl = (Playlist*)data;
-
-  if(gtk_tree_selection_get_selected(sel,&model,&treeiter)) {
-    gtk_tree_model_get(model,&treeiter,POSITION,&selection,-1);
-    D("selected file %u",*selection);
-    pl->selected = *selection;
-    pl->refresh();
-  }
-}
-*/
 
 void on_save_button(GtkWidget *widget, gpointer *data) {
   Playlist *pl = (Playlist*)data;
   pl->decoder->save();
+}
+
+void on_syncstart_button(GtkWidget *widget, gpointer *data) {
+  vector<Playlist*>::iterator pl_iter;
+  Gui *gui = (Gui*)data;
+  Playlist *pl;
+
+  gui->syncstart = false;
+
+  for( pl_iter = gui->playlist.begin();
+       pl_iter != gui->playlist.end();
+       ++pl_iter) {
+    pl = *pl_iter;
+    pl->decoder->stop();
+    pl->decoder->position = 0;
+    pl->decoder->play();
+    pl->refresh();
+
+  }
+  
+  jsleep(1,0);
+  gui->syncstart = true;
+  
 }
 
 void on_play_button(GtkWidget *widget, gpointer *data) {
@@ -117,6 +125,8 @@ void on_delete_button(GtkWidget *widget, gpointer *data) {
   model = gtk_tree_view_get_model(GTK_TREE_VIEW(pl->treeview));
   select = gtk_tree_view_get_selection(GTK_TREE_VIEW(pl->treeview));
   rowlist = gtk_tree_selection_get_selected_rows(select, &model);
+
+  if(!rowlist) return;
 
   rowlist = g_list_reverse(rowlist);
   rowlist = g_list_first(rowlist);
@@ -384,12 +394,14 @@ Playlist::Playlist(int num) {
   gtk_widget_show (save_button);
   gtk_box_pack_start (GTK_BOX (buttonbox), save_button, TRUE, TRUE, 0);
   g_signal_connect((gpointer)save_button, "pressed", G_CALLBACK(on_save_button), this);
-  
+
+  /*
   statusbar = gtk_statusbar_new ();
   snprintf(statusbar_name,255,"statusbar_%u",num);
   gtk_widget_set_name (statusbar, statusbar_name);
   gtk_widget_show (statusbar);
   gtk_box_pack_start (GTK_BOX (widget), statusbar, FALSE, FALSE, 0);
+  */
 
   // now setup the model view for the treeview
   treestore = gtk_tree_store_new(COLUMNS,
@@ -518,10 +530,23 @@ Gui::Gui() {
   gtk_window_set_title (GTK_WINDOW (window), "IvySync Graphical Interface");
   main_window = (GtkWindow*)window; // global static pointer
 
+  vbox = gtk_vbox_new (FALSE, 0);
+  gtk_widget_set_name (vbox, "main_vbox");
+  gtk_widget_show (vbox);
+  gtk_container_add(GTK_CONTAINER(window), vbox);
+
   notebook = gtk_notebook_new ();
   gtk_widget_set_name (notebook, "notebook");
   gtk_widget_show (notebook);
-  gtk_container_add (GTK_CONTAINER (window), notebook);
+  gtk_box_pack_start (GTK_BOX (vbox), notebook, TRUE, TRUE, 0);
+  //gtk_container_add (GTK_CONTAINER (vbox), notebook);
+  
+  syncbutton = gtk_toggle_button_new_with_mnemonic ("gtk-media-play");
+  gtk_button_set_use_stock (GTK_BUTTON (syncbutton), TRUE);
+  gtk_widget_set_name (syncbutton, "sync_button");
+  gtk_widget_show (syncbutton);
+  gtk_box_pack_start (GTK_BOX (vbox), syncbutton, FALSE, FALSE, 0);
+  g_signal_connect((gpointer)syncbutton, "pressed", G_CALLBACK(on_syncstart_button), this);
 
   // QUAA
   syncstart = true;

@@ -8,11 +8,14 @@
 CC = gcc
 CPP = g++
 LINKER = ld
+
 # debugging flags:
-CPPFLAGS = -I. -Wall -ggdb `pkg-config --cflags gtk+-2.0`
+#CPPFLAGS = -I. -Wall -ggdb -pg `pkg-config --cflags gtk+-2.0`
 
 # optimized flags:
-# CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
+CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math -march=pentium3 \
+           `pkg-config --cflags gtk+-2.0`
+
 LIBS = -lpthread `pkg-config --libs gtk+-2.0`
 
 OBJ = decoder.o thread.o utils.o cmdline.o gui.o

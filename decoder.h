@@ -98,7 +98,8 @@ class Decoder : public Thread {
   int fd;
   FILE *playlist_fd;
 
-  uint8_t buffo[(1024*64)+1024]; // 64k + 1k bound
+//  uint8_t buffo[CHUNKSIZE+1024]; // + 1k bound
+  uint8_t *buffo;
 
 };
 

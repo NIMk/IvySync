@@ -79,6 +79,8 @@ class Gui {
  private:
   void status(char *format, ...);
   GtkWidget *window;
+  GtkWidget *vbox;
+  GtkWidget *syncbutton;
   GtkWidget *notebook;
   
 };

@@ -39,11 +39,16 @@ Decoder::Decoder()
   dummy = false;
   gui = false;
 
-  memset(buffo,0,sizeof(buffo));
+//  memset(buffo,0,CHUNKSIZE+1024);
+  buffo = (uint8_t*) calloc(CHUNKSIZE,1);
+  if(!buffo) 
+    E("fatal error: can't allocate %uMb of memory for decoder",
+       CHUNKSIZE/1024/1024);
 }
 
 Decoder::~Decoder() {
   close();
+  free(buffo);
   quit = true;
 }
 
@@ -147,6 +152,10 @@ void Decoder::run() {
 
   D("thread %u launched",pthread_self());
 
+  // set max realtime priority
+//  if( set_rtpriority(true) )
+//    A("thread %u running on max realtime priority",pthread_self());
+  
   while(!quit) {
 
     update();
@@ -177,6 +186,8 @@ void Decoder::run() {
       while(!playing && !quit) {
 	jsleep(0,200);
       }
+      
+
       if(quit) break;
       ///////////////////////////
 
@@ -198,6 +209,8 @@ void Decoder::run() {
       while(writing) { // writing loop
 	
 	buf += written;
+
+	if(quit) break;
 
 	if(dummy) // emulation mode with no device (for devel)
 	  written = writing; 
@@ -234,7 +247,10 @@ void Decoder::flush() {
   
   while( poll(&fdled,1,1000) < 1 ) { // wait infinite until ready
     if(fdled.revents & POLLOUT) return;
-    else W("device %i still not ready for writing",fd);
+    else {
+      W("device %i still not ready for writing",fd);
+      if(quit) return;
+    }
   }
 }
 

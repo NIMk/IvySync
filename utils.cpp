@@ -126,3 +126,28 @@ void chomp(char *str) {
 
   strncpy(str, tmp, MAX_CHOMP_SIZE);
 }
+
+
+
+#ifdef linux
+#include <sched.h>
+/* sets the process to "policy" policy,  if max=1 then set at max priority,
+   else use min priority */
+
+bool set_rtpriority(bool max) {
+  struct sched_param schp;
+  // set the process to realtime privs
+
+  memset(&schp, 0, sizeof(schp));
+  
+  if(max) 
+    schp.sched_priority = sched_get_priority_max(SCHED_RR);
+  else
+    schp.sched_priority = sched_get_priority_min(SCHED_RR);
+  
+  if (sched_setscheduler(0, SCHED_RR, &schp) != 0)
+    return false;
+  else
+    return true;
+}
+#endif

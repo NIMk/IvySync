@@ -34,6 +34,8 @@ void jsleep(int sec, long nsec);
 
 void chomp(char *str);
 
+bool set_rtpriority(bool max);
+
 #endif
 
 
