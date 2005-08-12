@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include <utils.h>
 
@@ -127,8 +128,17 @@ void chomp(char *str) {
   strncpy(str, tmp, MAX_CHOMP_SIZE);
 }
 
+char *datemark() {
+  static char dm[7];
+  struct tm *tm;
+  time_t now;
 
-
+  now = time(NULL);
+  tm = localtime(&now);
+  strftime(dm,6,"%d%b",tm);
+  return(dm);
+}
+  
 #ifdef linux
 #include <sched.h>
 /* sets the process to "policy" policy,  if max=1 then set at max priority,

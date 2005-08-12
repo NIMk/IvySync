@@ -318,6 +318,11 @@ bool Decoder::remove(int pos) {
 }
 
 int Decoder::load() {
+  // load the playlist from the .ivysync/ directory
+  // renders a date string of today in the format of DDMMM (12Aug)
+  // if the playlist .ivysync/DDMMM-videoNN is there load that one
+  // otherwise fallback on the .ivysync/videoNN playlist
+  // if that is not even there then we don't have a playlist.
   FILE *fd;
   char path[512];
   char line[1024];
@@ -331,13 +336,19 @@ int Decoder::load() {
     return -1;
   }
 
-  snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
+  snprintf(path,511,"%s/.ivysync/%s-video%u",home,datemark(),device_num);
+  D("looking for time scheduled playlist of today: %s",path);
   fd = fopen(path,"r");
-  if(!fd) {
-    E("can't load playlist %s: %s", path, strerror(errno));
-    return -1;
+  if(!fd) { // today's playlist not found, go look for default one
+    snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
+    fd = fopen(path,"r");
+    if(!fd) {
+      E("can't load playlist %s: %s", path, strerror(errno));
+      return -1;
+    }
   }
-  D("reading from configuration file %s",path);
+
+  A("reading from playlist file %s",path);
   while( fgets(line,1023,fd) ) {
     if( feof(fd) ) break;
 
