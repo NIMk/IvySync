@@ -128,14 +128,19 @@ void chomp(char *str) {
   strncpy(str, tmp, MAX_CHOMP_SIZE);
 }
 
-char *datemark() {
-  static char dm[7];
+void get_time(char *f, struct tm *tt) {
+  strptime(f,"%d%b%y-%H%M",tt);
+  return;
+}
+
+char *mark_time() {
+  static char dm[32];
   struct tm *tm;
   time_t now;
 
   now = time(NULL);
   tm = localtime(&now);
-  strftime(dm,6,"%d%b",tm);
+  strftime(dm,31,"%d%b%y-%H%M",tm);
   return(dm);
 }
   

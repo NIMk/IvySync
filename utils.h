@@ -34,7 +34,8 @@ void jsleep(int sec, long nsec);
 
 void chomp(char *str);
 
-char *datemark();
+char *mark_time();
+void get_time(char *f, struct tm *tt);
 
 bool set_rtpriority(bool max);
 

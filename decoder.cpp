@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
 #include <sys/select.h>
 #include <sys/poll.h>
 #include <sys/types.h>
@@ -317,10 +318,26 @@ bool Decoder::remove(int pos) {
   return false;
 }
 
+static time_t now_epoch;
+static struct tm     now;
+
+int playlist_selector(const struct dirent *dir) {
+  char today_str[32];
+
+  strftime(today_str,31,"%d%b%y",&now);
+
+  if( strstr(dir->d_name, today_str) )
+    return 1;
+  
+  return 0;
+}
+  
+  
+  
 int Decoder::load() {
   // load the playlist from the .ivysync/ directory
-  // renders a date string of today in the format of DDMMM (12Aug)
-  // if the playlist .ivysync/DDMMM-videoNN is there load that one
+  // renders a date string of today in the format of DDMMMYY-HHMM (12Aug)
+  // if the playlist .ivysync/DDMMM*-videoNN is there load that one
   // otherwise fallback on the .ivysync/videoNN playlist
   // if that is not even there then we don't have a playlist.
   FILE *fd;
@@ -329,23 +346,82 @@ int Decoder::load() {
   int c = 0;
   struct stat st;
 
+  struct tm pltime;
+  struct tm plseltime;
+
+  struct dirent **filelist;
+  int found;
+  
+  char ThePlaylist[512];
+  char videodev[64];
   char *home = getenv("HOME");
+
   snprintf(path,511,"%s/.ivysync",home);
   if( stat(path, &st) != 0) {
     D("no saved playlists in %s: %s",path,strerror(errno));
     return -1;
   }
+    
+  // when we are now
+  now_epoch = time(NULL);
+  localtime_r( &now_epoch, &now );
+  snprintf(videodev,63,"video%u",device_num);
 
-  snprintf(path,511,"%s/.ivysync/%s-video%u",home,datemark(),device_num);
-  D("looking for time scheduled playlist of today: %s",path);
+  // scan the directory for scheduled playlists starting with date
+  found = scandir(path, &filelist, playlist_selector, alphasort);
+  if(found < 0) {
+    E("playlist scandir: %s",strerror(errno));
+    return -1;
+  }
+ 
+  // setup time selection of the latest playlist of today
+  memcpy(&plseltime, &now, sizeof(struct tm));
+  plseltime.tm_hour = 0;
+  plseltime.tm_min = 0;
+
+  // in filelist[] we have all playlists of today
+  // now need to sort out the ones that are not from this device
+  // and the ones that are in the future (hour and minutes)
+  while(found--) {
+
+    D("checking playlist for today %s", filelist[found]->d_name);
+    // eliminate the ones that are not for this device
+    if( ! strstr( filelist[found]->d_name, videodev ) ) continue;
+
+    // read and check the exact time on the filename
+    get_time( filelist[found]->d_name, &pltime );
+    
+    // skip if we already have a more recent playlist
+    if(plseltime.tm_hour > pltime.tm_hour) continue;
+    else if(plseltime.tm_hour == pltime.tm_hour)
+      if(plseltime.tm_min >= pltime.tm_min) continue;
+    
+    if(now.tm_hour > pltime.tm_hour) {
+      
+      D("this playlist is actual, we're going to use this");
+      snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
+      memcpy(&plseltime,&pltime,sizeof(struct tm));
+
+    } else if(now.tm_hour == pltime.tm_hour) {
+      
+      // same hour, let's check the minutes
+      if(now.tm_min >= pltime.tm_min) {
+
+	D("this playlist is scheduled right now");
+	snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
+	memcpy(&plseltime,&pltime,sizeof(struct tm));
+
+      }
+    } else D("this playlist will be activated later");
+    
+  }
+
+  snprintf(path,511,"%s/.ivysync/%s",home,ThePlaylist);
+
   fd = fopen(path,"r");
-  if(!fd) { // today's playlist not found, go look for default one
-    snprintf(path,511,"%s/.ivysync/video%u",home,device_num);
-    fd = fopen(path,"r");
-    if(!fd) {
-      E("can't load playlist %s: %s", path, strerror(errno));
-      return -1;
-    }
+  if(!fd) {
+    E("can't load playlist %s: %s", path, strerror(errno));
+    return -1;
   }
 
   A("reading from playlist file %s",path);
