@@ -171,9 +171,9 @@ void Decoder::run() {
 
     playlist_fd = fopen( movie.c_str(), "rb" );
     if(!playlist_fd) {
-      E("can't open %s: %s", movie.c_str(), strerror(errno));
+      E("can't open %s: %s (%i)", movie.c_str(), strerror(errno), errno);
 
-      if(errno==EOVERFLOW) {
+      if(errno==27) { // EOVERFLOW - file too large
 
 	int tmpfd;
 	tmpfd = open( movie.c_str(), O_RDONLY|O_LARGEFILE);
@@ -343,6 +343,9 @@ int playlist_selector(const struct dirent *dir) {
   if( strstr(dir->d_name, today_str) )
     return 1;
   
+  if( strstr(dir->d_name, "video") )
+    return 1;
+
   return 0;
 }
   
@@ -403,20 +406,27 @@ int Decoder::load() {
     if( ! strstr( filelist[found]->d_name, videodev ) ) continue;
 
     // read and check the exact time on the filename
-    get_time( filelist[found]->d_name, &pltime );
-    
-    // skip if we already have a more recent playlist
-    if(plseltime.tm_hour > pltime.tm_hour) continue;
-    else if(plseltime.tm_hour == pltime.tm_hour)
-      if(plseltime.tm_min >= pltime.tm_min) continue;
-    
-    if(now.tm_hour > pltime.tm_hour) {
+    // in case the playlist filename doesn't starts with video*
+    if ( filelist[found]->d_name[0] == 'v') {
       
-      D("this playlist is actual, we're going to use this");
       snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
-      memcpy(&plseltime,&pltime,sizeof(struct tm));
 
-    } else if(now.tm_hour == pltime.tm_hour) {
+    } else {
+
+      get_time( filelist[found]->d_name, &pltime );
+    
+      // skip if we already have a more recent playlist
+      if(plseltime.tm_hour > pltime.tm_hour) continue;
+      else if(plseltime.tm_hour == pltime.tm_hour)
+        if(plseltime.tm_min >= pltime.tm_min) continue;
+    
+      if(now.tm_hour > pltime.tm_hour) {
+      
+        D("this playlist is actual, we're going to use this");
+        snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
+        memcpy(&plseltime,&pltime,sizeof(struct tm));
+
+      } else if(now.tm_hour == pltime.tm_hour) {
       
       // same hour, let's check the minutes
       if(now.tm_min >= pltime.tm_min) {
@@ -427,7 +437,7 @@ int Decoder::load() {
 
       }
     } else D("this playlist will be activated later");
-    
+   } 
   }
 
   snprintf(path,511,"%s/.ivysync/%s",home,ThePlaylist);
