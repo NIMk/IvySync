@@ -172,8 +172,22 @@ void Decoder::run() {
     playlist_fd = fopen( movie.c_str(), "rb" );
     if(!playlist_fd) {
       E("can't open %s: %s", movie.c_str(), strerror(errno));
-      update();
-      continue;
+
+      if(errno==EOVERFLOW) {
+
+	int tmpfd;
+	tmpfd = open( movie.c_str(), O_RDONLY|O_LARGEFILE);
+
+	if(!tmpfd) {
+	  E("failed opening with largefile support: %s",strerror(errno));
+	  update();
+	  continue;
+        } else playlist_fd = fdopen( tmpfd , "rb" );
+
+      } else {
+        update();
+        continue;
+      }
     }
 
     N("now playing %s",movie.c_str());
