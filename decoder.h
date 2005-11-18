@@ -73,6 +73,10 @@ class Decoder : public Thread {
   bool play();
   bool stop();
   bool restart();
+
+  int  getpos();
+  void setpos(int pos);
+
   bool playing;
   
   bool *syncstart;
@@ -92,8 +96,9 @@ class Decoder : public Thread {
 
   void flush();
 
-
-  
+  long long filesize; // current file playing, size in bytes
+  long long filepos; // current file playing, position in bytes
+  long long newfilepos; // new position to skip in file
 
   int fd;
   FILE *playlist_fd;

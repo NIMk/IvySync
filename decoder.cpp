@@ -40,6 +40,10 @@ Decoder::Decoder()
   dummy = false;
   gui = false;
 
+  filesize = 0L;
+  filepos = 0L;
+  newfilepos = 0L;
+
 //  memset(buffo,0,CHUNKSIZE+1024);
   buffo = (uint8_t*) calloc(CHUNKSIZE,1);
   if(!buffo) 
@@ -173,7 +177,7 @@ void Decoder::run() {
     if(!playlist_fd) {
       E("can't open %s: %s (%i)", movie.c_str(), strerror(errno), errno);
 
-      if(errno==27) { // EOVERFLOW - file too large
+      if(errno==27) { // EOVERFLOW - file too large on Linux/Glibc
 
 	int tmpfd;
 	tmpfd = open( movie.c_str(), O_RDONLY|O_LARGEFILE);
@@ -191,6 +195,14 @@ void Decoder::run() {
     }
 
     N("now playing %s",movie.c_str());
+    
+    // read the total length of movie file
+    fseek(playlist_fd, 0L, SEEK_END);
+    filesize = ftell(playlist_fd);
+    fseek(playlist_fd, 0L, SEEK_SET);
+    filepos = 0L; // set position at the beginning
+    
+    A("movie length: %lu (bytes)",filesize);
 
     do { // inner reading loop
 
@@ -234,10 +246,13 @@ void Decoder::run() {
 
 	if(written<0) // error on write
 	  continue;
+	else
+	  filepos += written;
 
 	writing -= written;
 	
 	flush();
+	
       }
       
     } while(in>0 && !quit); // read/write inner loop
@@ -267,6 +282,13 @@ void Decoder::flush() {
       if(quit) return;
     }
   }
+
+  // if there is a seek to do, do it now
+  if(newfilepos > 0L) {
+    D("seeking to new position %lu", newfilepos);
+    fseek(playlist_fd, newfilepos, SEEK_SET);
+    newfilepos = 0;
+  }
 }
 
 bool Decoder::play() {
@@ -282,6 +304,27 @@ bool Decoder::restart() {
   position = 0;
   return true;
 }
+
+int Decoder::getpos() {
+  // filesize : 100 = filepos : x
+  // filesize : filepos = 100 : x
+  int percent;
+
+  percent = (filepos * 100) / filesize;
+  //  D("movie %s at position %u %% (%lu byte)",
+  //    movie.c_str(), percent, filepos);
+  return percent;
+}
+
+void Decoder::setpos(int pos) {
+  // filesize : 100 = x : pos
+
+  newfilepos = (filesize * pos) / 100;
+
+  D("Decoder::setpos(%u) : newfilepos = %lu",
+    pos, newfilepos);
+}
+    
 
 bool Decoder::prepend(char *file) {
   playlist.insert( playlist.begin(), file );
@@ -428,16 +471,16 @@ int Decoder::load() {
 
       } else if(now.tm_hour == pltime.tm_hour) {
       
-      // same hour, let's check the minutes
-      if(now.tm_min >= pltime.tm_min) {
-
-	D("this playlist is scheduled right now");
-	snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
-	memcpy(&plseltime,&pltime,sizeof(struct tm));
-
-      }
-    } else D("this playlist will be activated later");
-   } 
+	// same hour, let's check the minutes
+	if(now.tm_min >= pltime.tm_min) {
+	  
+	  D("this playlist is scheduled right now");
+	  snprintf(ThePlaylist,511,"%s",filelist[found]->d_name);
+	  memcpy(&plseltime,&pltime,sizeof(struct tm));
+	  
+	}
+      } else D("this playlist will be activated later");
+    } 
   }
 
   snprintf(path,511,"%s/.ivysync/%s",home,ThePlaylist);

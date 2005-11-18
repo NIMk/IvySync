@@ -1,8 +1,8 @@
 
 /*  IvySync - Video SyncStarter
  *
- *  (c) Copyright 2004 Denis Roio aka jaromil <jaromil@dyne.org>
- *                     Nederlands Instituut voor Mediakunst
+ *  (c) Copyright 2004-2005 Denis Roio aka jaromil <jaromil@dyne.org>
+ *                          Nederlands Instituut voor Mediakunst
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published 
@@ -32,13 +32,17 @@
 #include <signal.h>
 
 #include <decoder.h>
-#include <utils.h>
+
+#include <xmlrpc.h>
 #include <gui.h>
 
+#include <utils.h>
+
+
 bool syncstart = false;
-bool daemonize = false;
 bool graphical = false;
 bool dummytest = false;
+bool rpcdaemon = false;
 
 // our global vector holding all instantiated decoders
 vector<Decoder*> decoders;
@@ -46,22 +50,28 @@ vector<Decoder*> decoders;
 // graphical interface
 Gui *gui;
 
+// xmlrpc interface
+XmlRpcServer *xmlrpc;
+
+// Threaded daemon
+IvySyncDaemon *daemonthread;
+
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
 "  -h --help      show this help\n"
 "  -d --device    activate a device (i.e. /dev/video16)\n"
 "  -s --scan      scan for available devices\n"
-"  -D --daemon    run in daemon mode\n"
+"  -x --xmlrpc    run XmlRpc daemon\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
 "  -g --gui       start the graphical user interface\n"
 "  -t --test      dummy testrun: don't open devices\n";
 
-char *short_options = "-hd:sDp:gt";
+char *short_options = "-hd:sxp:gt";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
   { "scan", no_argument, NULL, 's'},
-  { "daemon", no_argument, NULL, 'D'},
+  { "xmlrpc", no_argument, NULL, 'x'},
   { "playmode", required_argument, NULL, 'p'},
   { "gui", no_argument, NULL, 'g'},
   { "test", no_argument, NULL, 't'},
@@ -176,8 +186,8 @@ int cmdline(int argc, char **argv) {
       
       break;
 
-    case 'D':
-      daemonize = true;
+    case 'x':
+      rpcdaemon = true;
       break;
 
     case 'g':
@@ -236,7 +246,8 @@ int main(int argc, char **argv) {
 	exit(0);
   }
 
-  // check for graphical interface
+  /////////////////////////////////
+  // setup the graphical interface
   if(graphical)
     if(!getenv("DISPLAY")) {
       graphical = false;
@@ -254,7 +265,29 @@ int main(int argc, char **argv) {
 
     exit(1);
   }
+  ////////////////////////////////
 
+
+  ////////////////////////////////
+  /// setup the XMLRPC interface
+  if(rpcdaemon) {
+    xmlrpc = new XmlRpcServer();
+    // instantiate all classes
+    new GetPos(xmlrpc, &decoders);
+    new SetPos(xmlrpc, &decoders);
+
+    // instantiate and launch the threaded daemon
+    daemonthread = new IvySyncDaemon(xmlrpc);
+    daemonthread->launch();
+
+  }
+
+  ////////////////////////////////
+
+
+
+  ////////////////////////////////
+  /// Syncstart!
   for( dec_iter = decoders.begin();
        dec_iter != decoders.end();
        ++dec_iter) {
@@ -271,15 +304,15 @@ int main(int argc, char **argv) {
   jsleep(0,500);
   A("Start!");
   syncstart = 1;
-  //  jsleep(0,2);
-  //  syncstart = 0;
-  //  jsleep(0,500);
-  //  syncstart = 1;
+  ////////////////////////////////
+
 
   int still_running = decoders.size();
   
-  if(daemonize) while(true); // loop infinitely
-  else while(still_running) {
+  //  if(daemonize) while(true); // loop infinitely
+  //  else
+
+  while(still_running) {
     still_running = 0;
     for( dec_iter = decoders.begin();
 	 dec_iter != decoders.end();
