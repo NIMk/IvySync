@@ -59,14 +59,15 @@ IvySyncDaemon *daemonthread;
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
 "  -h --help      show this help\n"
-"  -d --device    activate a device (i.e. /dev/video16)\n"
+"  -t --test      dummy testrun: don't open devices\n"
+"  -D --debug     print verbose debugging messages\n"
 "  -s --scan      scan for available devices\n"
-"  -x --xmlrpc    run XmlRpc daemon\n"
+"  -d --device    activate a device (i.e. /dev/video16)\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
-"  -g --gui       start the graphical user interface\n"
-"  -t --test      dummy testrun: don't open devices\n";
+"  -x --xmlrpc    run XmlRpc daemon for remote control\n"
+"  -g --gui       start the graphical user interface\n";
 
-char *short_options = "-hd:sxp:gt";
+char *short_options = "-hd:sxp:gtD:";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
@@ -75,6 +76,7 @@ const struct option long_options[] = {
   { "playmode", required_argument, NULL, 'p'},
   { "gui", no_argument, NULL, 'g'},
   { "test", no_argument, NULL, 't'},
+  { "debug", required_argument, NULL, 'D'},
   {0, 0, 0, 0}
 };
 
@@ -197,6 +199,10 @@ int cmdline(int argc, char **argv) {
     case 't':
       dummytest = true;
       break;
+
+    case 'D':
+      set_debug( atoi(optarg) );
+      break;
       
     case 1:
       fd = fopen(optarg,"rb");
@@ -222,7 +228,7 @@ int main(int argc, char **argv) {
   vector<Decoder*>::iterator dec_iter;
   Decoder *dec;
 
-  set_debug(3);
+  set_debug(1);
 
   /* register quit signal handlers */
   if (signal (SIGINT, quitproc) == SIG_ERR) {

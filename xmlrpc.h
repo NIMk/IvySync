@@ -66,6 +66,37 @@ public:
 //RPC(Stop,"Stop playing a channel");
 //RPC(PlaylistAppend,"Append a file to a channel's playlist");
 
+
+class Play : public XmlRpcServerMethod, IvySyncPublicMethod {
+public:
+  
+  Play(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  
+  ~Play() { };
+  
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+
+  std::string help() { 
+    return std::string("Start playing the channel"); }
+  
+};
+
+
+class Stop : public XmlRpcServerMethod, IvySyncPublicMethod {
+public:
+  
+  Stop(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  
+  ~Stop() { };
+  
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+
+  std::string help() { 
+    return std::string("Stop playing the channel"); }
+  
+};
+
+
 class GetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:
   

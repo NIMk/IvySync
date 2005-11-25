@@ -57,6 +57,15 @@ public:                                                        \
 
 //RPCFUNC(Play,"Start playing a channel");
 
+Play::Play(XmlRpcServer* srv, vector<Decoder*> *decoders)
+  : XmlRpcServerMethod("Play", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
+Stop::Stop(XmlRpcServer* srv, vector<Decoder*> *decoders)
+  : XmlRpcServerMethod("Stop", srv),
+    IvySyncPublicMethod(decoders)
+{ }
 
 GetPos::GetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
   : XmlRpcServerMethod("GetPos", srv),
@@ -69,8 +78,35 @@ SetPos::SetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
 { }
 
 
-void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
+void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  if( params.size() != 1) {
+    E("XMLRPC: Play called with invalid number of arguments (%u)",
+      params.size() );
+    return;
+  }
+
+  Decoder *dec = get_decoder( (int) params[0] -1 );
+  result = (double) dec->play();
+}
+
+
+
+void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  if( params.size() != 1) {
+    E("XMLRPC: Stop called with invalid number of arguments (%u)",
+      params.size() );
+    return;
+  }
+
+  Decoder *dec = get_decoder( (int) params[0] -1 );
+  result = (double) dec->stop();
+}
+
+
+
+
+void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   if( params.size() != 1) {
     E("XMLRPC: GetPos called with invalid number of arguments (%u)",
       params.size() );

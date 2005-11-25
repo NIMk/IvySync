@@ -426,6 +426,8 @@ int Decoder::load() {
   now_epoch = time(NULL);
   localtime_r( &now_epoch, &now );
   snprintf(videodev,63,"video%u",device_num);
+  // use the default playlist
+  snprintf(ThePlaylist,511,"video%u",device_num);
 
   // scan the directory for scheduled playlists starting with date
   found = scandir(path, &filelist, playlist_selector, alphasort);

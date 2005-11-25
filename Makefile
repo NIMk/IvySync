@@ -20,7 +20,7 @@ LIBS = xmlrpc++/libxmlrpc++.a -lpthread -lssl `pkg-config --libs gtk+-2.0`
 
 OBJ = decoder.o thread.o utils.o cmdline.o gui.o xmlrpc.o
 
-all: xmlrpc ivysync
+all: xmlrpc ivysync ivysync-remote
 
 xmlrpc: 
 	cd xmlrpc++ && $(MAKE)
@@ -28,6 +28,10 @@ xmlrpc:
 ivysync: $(OBJ)
 	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ) $(LIBS)
 
+ivysync-remote: ivysync-remote.o
+	$(CPP) -Ixmlrpc++ -Wall -ggdb -pg \
+	       -o ivysync-remote ivysync-remote.o \
+	       xmlrpc++/libxmlrpc++ -lssl
 
 #make clean
 clean:
