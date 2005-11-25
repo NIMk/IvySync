@@ -31,7 +31,7 @@ ivysync: $(OBJ)
 
 #make clean
 clean:
-	rm -rf *.o *~ ivysync xmlrpc++/*.o xmlrpc++/*.a xmlrpc++/*~
+	rm -rf *.o *~ ivysync 
 
 install: ivysync
 	install ivysync /usr/local/bin
