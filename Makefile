@@ -5,33 +5,36 @@
 # $Id: Makefile 60 2004-11-12 15:40:18Z jaromil $
 
 
-CC = gcc
 CPP = g++
 LINKER = ld
 
+GTKFLAGS = `pkg-config --cflags gtk+-2.0`
+GTKLIBS  = `pkg-config --libs   gtk+-2.0`
+
 # debugging flags:
-CPPFLAGS = -I. -Ixmlrpc++ -Wall -ggdb -pg `pkg-config --cflags gtk+-2.0`
-
+CPPFLAGS = -I. -Ixmlrpc++ -Wall -ggdb -pg $(GTKFLAGS)
 # optimized flags:
-#CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math -march=pentium3 \
-           `pkg-config --cflags gtk+-2.0`
+#CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math
 
-LIBS = xmlrpc++/libxmlrpc++.a -lpthread -lssl `pkg-config --libs gtk+-2.0`
 
-OBJ = decoder.o thread.o utils.o cmdline.o gui.o xmlrpc.o
+
+
+LIBS = xmlrpc++/libxmlrpc++.a -lpthread -lssl
+
+IVYSYNC_OBJ = decoder.o thread.o utils.o cmdline.o gui.o xmlrpc.o
+
+IVYSYNC_REMOTE_OBJ = ivysync-remote.o utils.o
 
 all: xmlrpc ivysync ivysync-remote
 
 xmlrpc: 
 	cd xmlrpc++ && $(MAKE)
 
-ivysync: $(OBJ)
-	$(CPP) $(CPPFLAGS) -o ivysync $(OBJ) $(LIBS)
+ivysync: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync $(IVYSYNC_OBJ) $(LIBS) $(GTKLIBS)
 
-ivysync-remote: ivysync-remote.o
-	$(CPP) -Ixmlrpc++ -Wall -ggdb -pg \
-	       -o ivysync-remote ivysync-remote.o \
-	       xmlrpc++/libxmlrpc++ -lssl
+ivysync-remote: $(IVYSYNC_REMOTE_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-remote $(IVYSYNC_REMOTE_OBJ) $(LIBS)
 
 #make clean
 clean:
