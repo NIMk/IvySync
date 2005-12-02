@@ -287,6 +287,7 @@ void Decoder::flush() {
   if(newfilepos > 0L) {
     D("seeking to new position %lu", newfilepos);
     fseek(playlist_fd, newfilepos, SEEK_SET);
+    filepos = newfilepos;
     newfilepos = 0;
   }
 }
