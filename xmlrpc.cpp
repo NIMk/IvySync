@@ -24,14 +24,20 @@
 #include <utils.h>
 
 IvySyncDaemon::IvySyncDaemon(XmlRpcServer *srv)
-  : Thread() { xmlrpc = srv; }
+  : Thread() {
+
+  xmlrpc = srv;
+  xmlrpc->_ssl = false;
+  xmlrpc->_ssl_ssl = NULL;
+
+}
 
 void IvySyncDaemon::run() {
   running = true;
   unlock();
 
   D("thread %u launched",pthread_self());
-  
+ 
   // guess where this number comes from ? ;)
   xmlrpc->bindAndListen(264);
 
