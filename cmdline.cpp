@@ -43,6 +43,7 @@ bool syncstart = false;
 bool graphical = false;
 bool dummytest = false;
 bool rpcdaemon = false;
+int videobuf = 64;
 
 // our global vector holding all instantiated decoders
 vector<Decoder*> decoders;
@@ -63,14 +64,16 @@ char *help =
 "  -D --debug     print verbose debugging messages\n"
 "  -s --scan      scan for available devices\n"
 "  -d --device    activate a device (i.e. /dev/video16)\n"
+"  -b --buffer    size of video buffer in KB (default 64)\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
 "  -x --xmlrpc    run XmlRpc daemon for remote control\n"
 "  -g --gui       start the graphical user interface\n";
 
-char *short_options = "-hd:sxp:gtD:";
+char *short_options = "-hd:sb:xp:gtD:";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
+  { "buffer", required_argument, NULL, 'b'},
   { "scan", no_argument, NULL, 's'},
   { "xmlrpc", no_argument, NULL, 'x'},
   { "playmode", required_argument, NULL, 'p'},
@@ -203,7 +206,11 @@ int cmdline(int argc, char **argv) {
     case 'D':
       set_debug( atoi(optarg) );
       break;
-      
+
+    case 'b':
+      videobuf = atoi(optarg);
+      break;
+
     case 1:
       fd = fopen(optarg,"rb");
       if(fd) {
@@ -279,6 +286,8 @@ int main(int argc, char **argv) {
   if(rpcdaemon) {
     xmlrpc = new XmlRpcServer();
     // instantiate all classes
+    new Play  (xmlrpc, &decoders);
+    new Stop  (xmlrpc, &decoders);
     new GetPos(xmlrpc, &decoders);
     new SetPos(xmlrpc, &decoders);
 
@@ -299,7 +308,7 @@ int main(int argc, char **argv) {
        ++dec_iter) {
 
     dec = *dec_iter;
-    dec->syncstart = &syncstart;
+    dec->setup( &syncstart, videobuf );
     dec->launch();
     dec->play();
 

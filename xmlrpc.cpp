@@ -49,20 +49,6 @@ void IvySyncDaemon::run() {
 }
 
 
-/* here we declare the public methods to be exposed via XmlRpc
-   each method is a class */
-#define RPCFUNC(name,Help)                                     \
-class name : public XmlRpcServerMethod, IvySyncPublicMethod {  \
-public:                                                        \
-  name (XmlRpcServer* srv, vector<Decoder*> *decoders);        \
-  ~name() { };                                                 \
-  void execute(XmlRpcValue &params, XmlRpcValue &result);      \
-  std::string help() {                                         \
-    return std::string(Help); }                                \
-}
-
-//RPCFUNC(Play,"Start playing a channel");
-
 Play::Play(XmlRpcServer* srv, vector<Decoder*> *decoders)
   : XmlRpcServerMethod("Play", srv),
     IvySyncPublicMethod(decoders)
@@ -86,26 +72,34 @@ SetPos::SetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
 
 
 void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+
   if( params.size() != 1) {
     E("XMLRPC: Play called with invalid number of arguments (%u)",
       params.size() );
     return;
   }
 
-  Decoder *dec = get_decoder( (int) params[0] -1 );
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  D("Play decoder %u", decnum );
   result = (double) dec->play();
 }
 
 
 
 void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+
   if( params.size() != 1) {
     E("XMLRPC: Stop called with invalid number of arguments (%u)",
       params.size() );
     return;
   }
 
-  Decoder *dec = get_decoder( (int) params[0] -1 );
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  D("Stop decoder %u", decnum);
   result = (double) dec->stop();
 }
 
@@ -113,25 +107,35 @@ void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
 
 void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+  double pos;
+
   if( params.size() != 1) {
     E("XMLRPC: GetPos called with invalid number of arguments (%u)",
       params.size() );
     return;
   }
 
-  Decoder *dec = get_decoder( (int) params[0] -1 );
-  result = (double) dec->getpos();
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  pos = (double) dec->getpos();
+  result = pos;
+  D("GetPos decoder %u returns %d", decnum, pos);
 
 }
 
 void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+
   if( params.size() != 2) {
     E("XMLRPC: SetPos called with invalid number of arguments (%u)",
       params.size() );
     return;
   }
 
-  Decoder *dec = get_decoder( (int) params[0] -1 );
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  D("SetPos decoder %u", decnum);
   dec->setpos( (int) params[1] );
 }
 

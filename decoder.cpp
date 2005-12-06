@@ -39,16 +39,13 @@ Decoder::Decoder()
   playing = false;
   dummy = false;
   gui = false;
+  quit = true;
 
   filesize = 0L;
   filepos = 0L;
   newfilepos = 0L;
 
-//  memset(buffo,0,CHUNKSIZE+1024);
-  buffo = (uint8_t*) calloc(CHUNKSIZE,1);
-  if(!buffo) 
-    E("fatal error: can't allocate %uMb of memory for decoder",
-       CHUNKSIZE/1024/1024);
+  buffo = NULL;
 }
 
 Decoder::~Decoder() {
@@ -85,6 +82,27 @@ bool Decoder::init(char *dev) {
   load();
 
   return true;
+}
+
+bool Decoder::setup(bool *sync, int bufsize) {
+
+  // save the syncstarter flag
+  syncstart = sync;
+  
+  if(buffo) free(buffo);
+  
+  buffo = (uint8_t*) calloc( bufsize+1, 1024); // +1 safety bound
+  if(!buffo) {
+    E("fatal error: can't allocate %uKB of memory for decoder", bufsize);
+    return(false);
+  }
+  
+  buffo_size = bufsize*1024;
+
+  quit = false;
+
+  return(true);
+			     
 }
 
 void Decoder::close() {
@@ -218,7 +236,7 @@ void Decoder::run() {
       if(quit) break;
       ///////////////////////////
 
-      in = fread(buffo, 1, CHUNKSIZE, playlist_fd);
+      in = fread(buffo, 1, buffo_size, playlist_fd);
       if( feof(playlist_fd) || in<1 ) { // EOF
 	D("end of file: %s",movie.c_str());
 	break;

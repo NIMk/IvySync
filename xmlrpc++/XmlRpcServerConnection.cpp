@@ -60,7 +60,7 @@ XmlRpcServerConnection::readHeader()
 {
   // Read available data
   bool eof;
-  if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, &eof, _ssl_ssl)) {
+  if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, &eof, NULL)) { // was _ssl_ssl
     // Its only an error if we already have read some data
     if (_header.length() > 0)
       XmlRpcUtil::error("XmlRpcServerConnection::readHeader: error while reading header (%s).",XmlRpcSocket::getErrorMsg().c_str());
@@ -140,7 +140,7 @@ XmlRpcServerConnection::readRequest()
   // If we dont have the entire request yet, read available data
   if (int(_request.length()) < _contentLength) {
     bool eof;
-    if ( ! XmlRpcSocket::nbRead(this->getfd(), _request, &eof, _ssl_ssl)) {
+    if ( ! XmlRpcSocket::nbRead(this->getfd(), _request, &eof, NULL)) { // was _ssl_ssl
       XmlRpcUtil::error("XmlRpcServerConnection::readRequest: read error (%s).",XmlRpcSocket::getErrorMsg().c_str());
       return false;
     }
@@ -179,7 +179,7 @@ XmlRpcServerConnection::writeResponse()
   }
 
   // Try to write the response
-  if ( ! XmlRpcSocket::nbWrite(this->getfd(), _response, &_bytesWritten, _ssl_ssl)) {
+  if ( ! XmlRpcSocket::nbWrite(this->getfd(), _response, &_bytesWritten, NULL)) { // was _ssl_ssl
     XmlRpcUtil::error("XmlRpcServerConnection::writeResponse: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
     return false;
   }

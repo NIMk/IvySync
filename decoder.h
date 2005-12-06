@@ -40,9 +40,6 @@ using namespace __gnu_cxx;
 #define LOOP 3
 #define RAND 4
 
-// size of video chunks read in bytes
-#define CHUNKSIZE (1024*64)
-
 class Playlist; // graphical interface
 
 class Decoder : public Thread {
@@ -52,6 +49,8 @@ class Decoder : public Thread {
   ~Decoder();
 
   bool init(char *dev);
+
+  bool setup(bool *sync, int bufsize);
 
   void close();
 
@@ -105,6 +104,7 @@ class Decoder : public Thread {
 
 //  uint8_t buffo[CHUNKSIZE+1024]; // + 1k bound
   uint8_t *buffo;
+  int buffo_size;
 
 };
 
