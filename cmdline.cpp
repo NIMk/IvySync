@@ -1,7 +1,7 @@
 
 /*  IvySync - Video SyncStarter
  *
- *  (c) Copyright 2004-2005 Denis Roio aka jaromil <jaromil@dyne.org>
+ *  (c) Copyright 2004-2006 Denis Roio aka jaromil <jaromil@dyne.org>
  *                          Nederlands Instituut voor Mediakunst
  *
  * This source code is free software; you can redistribute it and/or
@@ -115,7 +115,7 @@ int cmdline(int argc, char **argv) {
   int c;
   int res;
 
-  N("IvySync 0.2 / (c)2004-2005 Denis Rojo <jaromil@dyne.org>");
+  N("IvySync 0.2 / (c)2004-2006 Denis Rojo <jaromil@dyne.org>");
 
   do { 
     res = getopt_long(argc, argv, short_options, long_options, NULL);

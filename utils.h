@@ -1,5 +1,5 @@
-/*  Generic utils, used in Fakiir
- *  (c) Copyright 2001-2005 Denis Roio aka jaromil <jaromil@dyne.org>
+/*  Generic utils
+ *  (c) Copyright 2001-2006 Denis Roio aka jaromil <jaromil@dyne.org>
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published 

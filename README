@@ -1,7 +1,7 @@
           ,-_/          .---.             
           '  | .  , . . \___  . . ,-. ,-. 
           .^ | | /  | |     \ | | | | |   
-          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.2]
+          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.3]
                      /|        /|         
                     `-'       `-'    by Denis "jaromil" Rojo
 		                     Montevideo Artlab R&D
@@ -14,12 +14,35 @@ parallel  playback  of  audio/video  materials:  IvySync  provides such
 functionality  for  IvyTV  supported  hardware  decoders, with accurate
 frame precision. 
 
-With the 0.2 release IvySync now reaches to sync up to 4 video channels
-with  frame precision and comes together with a user friendly graphical
-interface (GTK2) to edit the playlists. 
+IvySync reaches to sync up to 4 video channels with frame precision and
+comes together with a user friendly graphical interface (GTK2) to  edit
+the playlists.
+
+With version 0.3 is now possible to remotely control the playback and
+skip positions on videos sending commands across the network (XMLRPC).
+Support for time based scheduling of different playlists is also
+implemented (but still lacking a graphical interface) to let a running
+syncstarter cycle various screening programs at different hours, days
+or months.
 
 
-== list of features
+IvySync has been employed by Montevideo / Time Based Arts to produce and
+exhibit video-art installations by, among the others:
+Linda Wallace, Calin Dan, Erwin Olaf, Sami Kallinen
+
+
+== documentation
+
+Visit  the  website  for  more  documentation, screenshots and download
+http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
+
+If you need more documentation or help in setting up a video syncstarter
+using this software, please consider hiring the services offered by
+Montevideo / Time Based Arts  http://montevideo.nl
+
+
+
+== list of technical features
 
     * full quality s/video or composite multiple output 
 
@@ -37,6 +60,10 @@ interface (GTK2) to edit the playlists.
 
     * capable of syncing up to 4 videos 
 
+    * remotely controllable thru XMLRPC commands
+
+    * time based scheduling of different playlists
+
 
 == requirements
 
@@ -47,13 +74,9 @@ interface (GTK2) to edit the playlists.
     * fairly good experience with *NIX systems 
 
 
+== disclaimer
 
-Visit  the  website  for  more  documentation, screenshots and download
-http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
-
-
-
-# IvySync is Copyright (C) 2004-2005 by Denis "Jaromil" Rojo
+ IvySync is Copyright (C) 2004-2006 by Denis "Jaromil" Rojo
 
 # This source code is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Public License as published 

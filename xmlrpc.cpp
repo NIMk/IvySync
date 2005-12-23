@@ -1,6 +1,6 @@
 /*  IvySync - Video SyncStarter
  *
- *  (c) Copyright 2004 - 2005 Denis Rojo <jaromil@dyne.org>
+ *  (c) Copyright 2004 - 2006 Denis Rojo <jaromil@dyne.org>
  *                     Nederlands Instituut voor Mediakunst
  *
  * This source code is free software; you can redistribute it and/or
