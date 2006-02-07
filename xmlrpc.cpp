@@ -69,7 +69,30 @@ SetPos::SetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+Open::Open(XmlRpcServer* src, vector<Decoder*> *decoders)
+  : XmlRpcServerMethod("Open", src),
+    IvySyncPublicMethod(decoders)
+{ }
 
+void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+  char *path;
+
+  if( params.size() != 1) {
+    E("XMLRPC: Open called with invalid number of arguments(%u)",
+      params.size() );
+    return;
+  }
+
+  // get out the decoder parameter
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  
+  // get out the path to the file to be opened
+  path = (char*) (std::string(params[1])).c_str();
+  D("Open decoder %u file %s", decnum, path);
+  result = (double) dec->append(path);
+}
 
 void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;

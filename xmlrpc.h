@@ -126,5 +126,19 @@ class SetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
 
 };
 
+class Open : public XmlRpcServerMethod, IvySyncPublicMethod {
+ public:
+
+  Open(XmlRpcServer* srv, vector<Decoder*> *decoders);
+
+  ~Open() { };
+
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+  
+  std::string help() { 
+    return std::string("Open a new file to be played"); }
+
+};
+
 
 #endif

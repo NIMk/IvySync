@@ -115,7 +115,7 @@ int cmdline(int argc, char **argv) {
   int c;
   int res;
 
-  N("IvySync 0.2 / (c)2004-2006 Denis Rojo <jaromil@dyne.org>");
+  N("IvySync 0.3 / (c)2004-2006 Denis Rojo <jaromil@dyne.org>");
 
   do { 
     res = getopt_long(argc, argv, short_options, long_options, NULL);
@@ -290,6 +290,7 @@ int main(int argc, char **argv) {
     new Stop  (xmlrpc, &decoders);
     new GetPos(xmlrpc, &decoders);
     new SetPos(xmlrpc, &decoders);
+    new Open  (xmlrpc, &decoders);
 
     // instantiate and launch the threaded daemon
     daemonthread = new IvySyncDaemon(xmlrpc);
