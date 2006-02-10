@@ -31,15 +31,20 @@
 
 using namespace XmlRpc;
 
-class IvySyncDaemon : public Thread {
+class IvySyncDaemon {
 public:
   IvySyncDaemon(XmlRpcServer *srv);
   ~IvySyncDaemon() { };
   
-  void run();
+  bool init(int port);
+  void run(double mstime);
   
+  bool quit;
+
 private:
+
   XmlRpcServer *xmlrpc;
+
 };
 
 class IvySyncPublicMethod {
@@ -58,7 +63,6 @@ public:
     return *dec_iter;
   }
   
- private:
   vector<Decoder*> *decoders;
 
 };
@@ -140,5 +144,18 @@ class Open : public XmlRpcServerMethod, IvySyncPublicMethod {
 
 };
 
+class Quit : public XmlRpcServerMethod, IvySyncPublicMethod {
+ public:
+
+  Quit(XmlRpcServer* srv, vector<Decoder*> *decoders);
+
+  ~Quit() { };
+
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+  
+  std::string help() { 
+    return std::string("Quit the ivysync from running"); }
+  
+};
 
 #endif

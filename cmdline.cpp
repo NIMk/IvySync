@@ -43,6 +43,7 @@ bool syncstart = false;
 bool graphical = false;
 bool dummytest = false;
 bool rpcdaemon = false;
+int rpcdaemonport;
 int videobuf = 64;
 
 // our global vector holding all instantiated decoders
@@ -55,7 +56,7 @@ Gui *gui;
 XmlRpcServer *xmlrpc;
 
 // Threaded daemon
-IvySyncDaemon *daemonthread;
+IvySyncDaemon *ivydaemon;
 
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
@@ -66,16 +67,16 @@ char *help =
 "  -d --device    activate a device (i.e. /dev/video16)\n"
 "  -b --buffer    size of video buffer in KB (default 64)\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
-"  -x --xmlrpc    run XmlRpc daemon for remote control\n"
+"  -x --xmlrpc    run XmlRpc daemon on a network port\n"
 "  -g --gui       start the graphical user interface\n";
 
-char *short_options = "-hd:sb:xp:gtD:";
+char *short_options = "-hd:sb:x:p:gtD:";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
   { "buffer", required_argument, NULL, 'b'},
   { "scan", no_argument, NULL, 's'},
-  { "xmlrpc", no_argument, NULL, 'x'},
+  { "xmlrpc", required_argument, NULL, 'x'},
   { "playmode", required_argument, NULL, 'p'},
   { "gui", no_argument, NULL, 'g'},
   { "test", no_argument, NULL, 't'},
@@ -178,21 +179,30 @@ int cmdline(int argc, char **argv) {
 
     case 'p':
       CHECK_DECODER;
-      if( strncasecmp(optarg,"play",4) ==0 )
+      if( strncasecmp(optarg,"play",4) ==0 ) {
+
 	dec->playmode = PLAY;
-      else if( strncasecmp(optarg,"cont",4) ==0 )
+
+      } else if( strncasecmp(optarg,"cont",4) ==0 ) {
+
 	dec->playmode = CONT;
-      else if( strncasecmp(optarg,"loop",4) ==0 )
+
+      } else if( strncasecmp(optarg,"loop",4) ==0 ) {
+
 	dec->playmode = LOOP;
-      else if( strncasecmp(optarg,"rand",4) ==0 )
+
+      } else if( strncasecmp(optarg,"rand",4) ==0 ) {
+
 	dec->playmode = RAND;
-      else
+
+      } else
 	E("unrecognized playmode: %s",optarg);
       
       break;
 
     case 'x':
       rpcdaemon = true;
+      rpcdaemonport = atoi(optarg);
       break;
 
     case 'g':
@@ -284,18 +294,27 @@ int main(int argc, char **argv) {
   ////////////////////////////////
   /// setup the XMLRPC interface
   if(rpcdaemon) {
+
     xmlrpc = new XmlRpcServer();
+
     // instantiate all classes
     new Play  (xmlrpc, &decoders);
     new Stop  (xmlrpc, &decoders);
     new GetPos(xmlrpc, &decoders);
     new SetPos(xmlrpc, &decoders);
     new Open  (xmlrpc, &decoders);
+    new Quit  (xmlrpc, &decoders);
 
-    // instantiate and launch the threaded daemon
-    daemonthread = new IvySyncDaemon(xmlrpc);
-    daemonthread->launch();
+    ivydaemon = new IvySyncDaemon(xmlrpc);
 
+    if( ! ivydaemon->init( rpcdaemonport) ) {
+      E("can't initialize daemon listening");
+      delete ivydaemon;
+      delete xmlrpc;
+      rpcdaemon = false;
+    } else
+      N("XMLRPC daemon listening for commands on port %u",
+	rpcdaemonport);
   }
 
   ////////////////////////////////
@@ -311,32 +330,51 @@ int main(int argc, char **argv) {
     dec = *dec_iter;
     dec->setup( &syncstart, videobuf );
     dec->launch();
-    dec->play();
+
+    if( ! rpcdaemon ) {
+      // try to load the playlist
+      dec->load();      
+      dec->play();
+    }
 
   }
-  
-  N("Syncing %i players...",decoders.size());
-	
-  jsleep(0,500);
-  A("Start!");
+
+  if( ! rpcdaemon ) {  
+    N("Syncing %i players...",decoders.size());
+    
+    jsleep(0,500);
+    A("Start!");
+  }
+
   syncstart = 1;
   ////////////////////////////////
 
 
-  int still_running = decoders.size();
-  
-  //  if(daemonize) while(true); // loop infinitely
-  //  else
 
-  while(still_running) {
-    still_running = 0;
-    for( dec_iter = decoders.begin();
-	 dec_iter != decoders.end();
-	 ++dec_iter) {
-      
-      dec = *dec_iter;
-      if(dec->playing) still_running++;
-      jsleep(1,0); // 1 second delay check
+  
+  if(rpcdaemon) {
+
+    // run as a daemon: quit only when requested
+    while( ! ivydaemon->quit ) {
+      ivydaemon->run(1.0);
+      jsleep(0,10);
+    }
+
+  } else {
+
+    // run until all the channels are at the end
+    int still_running = decoders.size();
+
+    while(still_running) {
+      still_running = 0;
+      for( dec_iter = decoders.begin();
+	   dec_iter != decoders.end();
+	   ++dec_iter) {
+	
+	dec = *dec_iter;
+	if(dec->playing) still_running++;
+	jsleep(1,0); // 1 second delay check
+      }
     }
   }
 

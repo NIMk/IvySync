@@ -23,29 +23,40 @@
 #include <xmlrpc.h>
 #include <utils.h>
 
-IvySyncDaemon::IvySyncDaemon(XmlRpcServer *srv)
-  : Thread() {
+static bool quit;
+
+IvySyncDaemon::IvySyncDaemon(XmlRpcServer *srv) {
 
   xmlrpc = srv;
   xmlrpc->_ssl = false;
   xmlrpc->_ssl_ssl = NULL;
 
+  quit = false;
+
 }
 
-void IvySyncDaemon::run() {
-  running = true;
-  unlock();
-
-  D("thread %u launched",pthread_self());
- 
+bool IvySyncDaemon::init(int port) {
   // guess where this number comes from ? ;)
-  xmlrpc->bindAndListen(264);
-
+  if( ! xmlrpc->bindAndListen(port) ) return false;
+  
   // let's be introspective so we list our own methods
   xmlrpc->enableIntrospection(true);
+  
+  return true;
+}
 
-  // work indefinitely (TODO: FIX this for proper quit)
-  xmlrpc->work(-1.0);
+void IvySyncDaemon::run(double mstime) {
+  //  running = true;
+  //  unlock();
+
+  if(::quit) {
+    quit = true;
+    return;
+  }
+
+  // run for amount of milliseconds (-1.0 for infinite)
+  xmlrpc->work( mstime );
+
 }
 
 
@@ -74,16 +85,38 @@ Open::Open(XmlRpcServer* src, vector<Decoder*> *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+Quit::Quit(XmlRpcServer* src, vector<Decoder*> *decoders)
+  : XmlRpcServerMethod("Quit", src),
+    IvySyncPublicMethod(decoders)
+{ }
+
+void Quit::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  Decoder *dec;
+  vector<Decoder*>::iterator iter;
+
+  for(iter = decoders->begin();
+      iter != decoders->end();
+      ++iter) {
+    
+    dec = *iter;
+    dec->stop();
+    dec->close();
+
+  }
+
+  ::quit = true;
+}
+  
 void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
   char *path;
 
-  if( params.size() != 1) {
+  if( params.size() != 2) {
     E("XMLRPC: Open called with invalid number of arguments(%u)",
       params.size() );
     return;
   }
-
+  
   // get out the decoder parameter
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );

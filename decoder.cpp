@@ -78,8 +78,6 @@ bool Decoder::init(char *dev) {
   // last two chars of the device name are the number
   device_num = atoi(&dev[len-2]);
 
-  // try to load the playlist
-  load();
 
   return true;
 }
