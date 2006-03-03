@@ -31,6 +31,16 @@
 
 using namespace XmlRpc;
 
+
+// METHODS:
+class Open;
+class Play;
+class Stop;
+class GetPos;
+class SetPos;
+class Quit;
+
+
 class IvySyncDaemon {
 public:
   IvySyncDaemon(XmlRpcServer *srv);
@@ -100,6 +110,19 @@ public:
   
 };
 
+class Pause : public XmlRpcServerMethod, IvySyncPublicMethod {
+public:
+  
+  Pause(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  
+  ~Pause() { };
+  
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+
+  std::string help() { 
+    return std::string("Pause the channel"); }
+  
+};
 
 class GetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:

@@ -1,7 +1,7 @@
           ,-_/          .---.             
           '  | .  , . . \___  . . ,-. ,-. 
           .^ | | /  | |     \ | | | | |   
-          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.3]
+          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.4]
                      /|        /|         
                     `-'       `-'    by Denis "jaromil" Rojo
 		                     Montevideo Artlab R&D
@@ -18,11 +18,11 @@ IvySync reaches to sync up to 4 video channels with frame precision and
 comes together with a user friendly graphical interface (GTK2) to  edit
 the playlists.
 
-With version 0.3 is now possible to remotely control the playback and
-skip positions on videos sending commands across the network (XMLRPC).
-Support for time based scheduling of different playlists is also
-implemented (but still lacking a graphical interface) to let a running
-syncstarter cycle various screening programs at different hours, days
+It is possible to remotely control the playback and skip  positions  on
+videos sending commands across the network (XMLRPC).
+Support for time  based  scheduling  of  different  playlists  is  also
+implemented (but still lacking a graphical interface) to let a  running
+syncstarter cycle various screening programs at different  hours,  days
 or months.
 
 
@@ -48,21 +48,19 @@ Montevideo / Time Based Arts  http://montevideo.nl
 
     * professional grade low cost solution 
 
-    * remotely controllable playback 
+    * remotely controllable playback (XMLRPC)
 
-    * Graphical interface for playlist scheduling 
+    * graphical interface for playlist scheduling 
 
     * extensible, scriptable and reliable *NIX technology 
 
-    * frame accurate sync of DVD quality audio/video 
+    * frame accurate sync of DVD quality audio/video (MPEG2)
 
-    * streaming playback from a local network 
+    * streaming playback from a local network (with Samba)
 
     * capable of syncing up to 4 videos 
 
-    * remotely controllable thru XMLRPC commands
-
-    * time based scheduling of different playlists
+    * time based scheduling of multiple playlists
 
 
 == requirements
@@ -76,7 +74,7 @@ Montevideo / Time Based Arts  http://montevideo.nl
 
 == disclaimer
 
- IvySync is Copyright (C) 2004-2006 by Denis "Jaromil" Rojo
+ IvySync is Copyright (C) 2004-2006 by Denis "Jaromil" Roio
 
 # This source code is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Public License as published 

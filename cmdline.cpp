@@ -43,7 +43,7 @@ bool syncstart = false;
 bool graphical = false;
 bool dummytest = false;
 bool rpcdaemon = false;
-int rpcdaemonport;
+int rpcdaemonport = 2640;
 int videobuf = 64;
 
 // our global vector holding all instantiated decoders
@@ -300,6 +300,7 @@ int main(int argc, char **argv) {
     // instantiate all classes
     new Play  (xmlrpc, &decoders);
     new Stop  (xmlrpc, &decoders);
+    new Pause (xmlrpc, &decoders);
     new GetPos(xmlrpc, &decoders);
     new SetPos(xmlrpc, &decoders);
     new Open  (xmlrpc, &decoders);

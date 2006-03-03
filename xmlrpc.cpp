@@ -70,6 +70,11 @@ Stop::Stop(XmlRpcServer* srv, vector<Decoder*> *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+Pause::Pause(XmlRpcServer* srv, vector<Decoder*> *decoders)
+  : XmlRpcServerMethod("Pause", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
 GetPos::GetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
   : XmlRpcServerMethod("GetPos", srv),
     IvySyncPublicMethod(decoders)
@@ -104,6 +109,8 @@ void Quit::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
   }
 
+  result = 1.0;
+
   ::quit = true;
 }
   
@@ -111,34 +118,50 @@ void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
   char *path;
 
-  if( params.size() != 2) {
+  if( params.size() < 2) {
     E("XMLRPC: Open called with invalid number of arguments(%u)",
       params.size() );
+    result = 0.0;
     return;
   }
   
   // get out the decoder parameter
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );
+  if(!dec) { result = 0.0; return; }
   
   // get out the path to the file to be opened
   path = (char*) (std::string(params[1])).c_str();
-  D("Open decoder %u file %s", decnum, path);
-  result = (double) dec->append(path);
+  D("XMLRPC: Open decoder %u file %s", decnum+1, path);
+
+  FILE *fd;
+  fd = fopen(path, "r");
+  if(!fd) {
+    result = 0.0;
+    return;
+  } else fclose(fd);
+  
+  dec->empty();
+  dec->append(path);
+  result = 1.0;
+
 }
 
 void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
 
-  if( params.size() != 1) {
+  if( params.size() < 1) {
     E("XMLRPC: Play called with invalid number of arguments (%u)",
       params.size() );
+    result = 0.0;
     return;
   }
 
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );
-  D("Play decoder %u", decnum );
+  if(!dec) { result = 0.0; return; }
+
+  D("XMLRPC: Play decoder %u", decnum+1 );
   result = (double) dec->play();
 }
 
@@ -147,26 +170,45 @@ void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
 void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
 
-  if( params.size() != 1) {
+  if( params.size() < 1) {
     E("XMLRPC: Stop called with invalid number of arguments (%u)",
       params.size() );
+    result = 0.0;
     return;
   }
 
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );
-  D("Stop decoder %u", decnum);
+  if(!dec) { result = 0.0; return; }
+
+  D("XMLRPC: Stop decoder %u", decnum+1);
   result = (double) dec->stop();
 }
 
+void Pause::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+  
+  if( params.size() < 1) {
+    E("XMLRPC: Pause called with invalid number of arguments (%u)",
+      params.size() );
+    result = 0.0;
+    return;
+  }
 
+  decnum = (int) params[0] -1;
+  Decoder *dec = get_decoder( decnum );
+  if(!dec) { result = 0.0; return; }
+
+  D("XMLRPC: Pause decoder %u", decnum+1);
+  result = (double) dec->pause();
+}
 
 
 void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
   double pos;
 
-  if( params.size() != 1) {
+  if( params.size() < 1) {
     E("XMLRPC: GetPos called with invalid number of arguments (%u)",
       params.size() );
     return;
@@ -174,16 +216,18 @@ void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );
+  if(!dec) { result = 0.0; return; }
+
   pos = (double) dec->getpos();
   result = pos;
-  D("GetPos decoder %u returns %d", decnum, pos);
+  D("XMLRPC: GetPos decoder %u returns %d", decnum+1, pos);
 
 }
 
 void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
 
-  if( params.size() != 2) {
+  if( params.size() < 2) {
     E("XMLRPC: SetPos called with invalid number of arguments (%u)",
       params.size() );
     return;
@@ -191,7 +235,9 @@ void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
   decnum = (int) params[0] -1;
   Decoder *dec = get_decoder( decnum );
-  D("SetPos decoder %u", decnum);
+  if(!dec) { result = 0.0; return; }
+
+  D("XMLRPC: SetPos decoder %u", decnum+1);
   dec->setpos( (int) params[1] );
 }
 

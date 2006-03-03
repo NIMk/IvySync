@@ -104,7 +104,7 @@ bool Decoder::setup(bool *sync, int bufsize) {
 }
 
 void Decoder::close() {
-  if(playing) stop();
+  playing = false;
   quit = true;
   if(running) {
     D("thread was running, waiting to join...");
@@ -122,14 +122,17 @@ void Decoder::update() {
 
     case PLAY: // next
 
-      if( position+1 > playlist.size()-1 ) stop();
-      else position++;
+      if( position+1 > (int)playlist.size()-1 )
+	stop();
+      else
+	position++;
 
+      D("update: position is now %u", position);
       break;
 
     case CONT: // next or first if at the end
 
-      if( position+1 > playlist.size()-1 ) position = 1;
+      if( position+1 > (int)playlist.size()-1 ) position = 1;
       else position++;
 
       break;
@@ -275,12 +278,14 @@ void Decoder::run() {
     
     fclose(playlist_fd);
     playlist_fd = 0;
+    clear();
 
   } // run() thread loop
 
   if(playlist_fd)
     fclose(playlist_fd); // be sure we close
   playlist_fd = 0;
+  clear();
 
   D("thread %u finished", pthread_self());
   return;
@@ -300,7 +305,7 @@ void Decoder::flush() {
   }
 
   // if there is a seek to do, do it now
-  if(newfilepos > 0L) {
+  if((newfilepos > 0L) && playlist_fd) {
     D("seeking to new position %lu", newfilepos);
     fseek(playlist_fd, newfilepos, SEEK_SET);
     filepos = newfilepos;
@@ -310,12 +315,37 @@ void Decoder::flush() {
 
 bool Decoder::play() {
   playing = true;
-  return playing;
+  return true;
 }
+
 bool Decoder::stop() {
+  newfilepos = 1;
+  clear();
   playing = false;
-  return playing;
+  return true;
 }
+
+bool Decoder::pause() {
+  playing = false;
+  return true;
+}
+
+bool Decoder::clear() {
+  if(!fd) return false;
+  
+  flush();
+
+  ::close(fd);
+
+  fd = ::open(device.c_str(), O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
+  if(fd<0) {
+    D("error opening device %s: %s",device.c_str(),strerror(errno));
+    return false;
+  }
+
+  return true;
+}
+
 bool Decoder::restart() {
   playing = false;
   position = 0;
@@ -354,7 +384,7 @@ bool Decoder::append(char *file) {
 }
 
 bool Decoder::insert(char *file, int pos) {
-  if(pos > playlist.size() ) {
+  if(pos > (int)playlist.size() ) {
 
     // playlist is smaller than pos: append at the end
     playlist.push_back(file);
@@ -390,6 +420,12 @@ bool Decoder::remove(int pos) {
     }
 
   return false;
+}
+
+bool Decoder::empty() {
+  playlist.clear();
+  position = 0;
+  return true;
 }
 
 static time_t now_epoch;

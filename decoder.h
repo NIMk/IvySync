@@ -60,6 +60,7 @@ class Decoder : public Thread {
   bool insert(char *file, int pos); ///< insert *file in playlist at pos
   //  bool remove(char *file); ///< remove the first occurrence of *file
   bool remove(int pos); ///< remove the playlist entry at pos
+  bool empty(); ///< empty all the playlist discarding all entries
 
   // save on file
   int load();
@@ -71,6 +72,8 @@ class Decoder : public Thread {
 
   bool play();
   bool stop();
+  bool pause();
+  bool clear();
   bool restart();
 
   int  getpos();
