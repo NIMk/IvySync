@@ -250,7 +250,7 @@ void Decoder::run() {
 //     } else
 //       filesize = moviestat.st_size;
 
-    playlist_fd = fopen( movie->name, "rb" );
+    playlist_fd = fopen64( movie->name, "rb" );
     if(!playlist_fd) {
       E("can't open %s: %s (%i)", movie->name, strerror(errno), errno);
 
@@ -272,11 +272,11 @@ void Decoder::run() {
     N("now playing %s",movie->name);
     
     // read the total length of movie file
-    fseek(playlist_fd, 0L, SEEK_END);
-    filesize = ftell(playlist_fd);
+    fseeko64(playlist_fd, 0L, SEEK_END);
+    filesize = ftello64(playlist_fd);
     // set position at the beginning
     filepos = 0L;
-    fseek(playlist_fd, filepos, SEEK_SET);
+    fseeko64(playlist_fd, filepos, SEEK_SET);
     //////////////////////////////////////
 
     // ??? or should we use:
@@ -378,7 +378,7 @@ void Decoder::flush() {
   // if there is a seek to do, do it now
   if((newfilepos > 0L) && playlist_fd) {
     D("seeking to new position %lu", newfilepos);
-    fseek(playlist_fd, newfilepos, SEEK_SET);
+    fseeko64(playlist_fd, newfilepos, SEEK_SET);
     filepos = newfilepos;
     newfilepos = 0;
   }

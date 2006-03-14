@@ -23,6 +23,15 @@
 #ifndef __DECODER_H__
 #define __DECODER_H__
 
+// for large file support (64bit file offsets)
+#define _LARGEFILE_SOURCE 1
+
+/* On many architectures both off_t and long are 32-bit types, but
+   compilation with #define _FILE_OFFSET_BITS 64 will turn off_t into
+   a 64-bit type. - see man fseeko(3) */
+#define _FILE_OFFSET_BITS 64
+
+
 #include <iostream>
 #include <pthread.h>
 #include <inttypes.h>
@@ -30,10 +39,6 @@
 #include <linklist.h>
 #include <thread.h>
 
-/* On many architectures both off_t and long are 32-bit types, but
-   compilation with #define _FILE_OFFSET_BITS 64 will turn off_t into
-   a 64-bit type. - see man fseeko(3) */
-#define _FILE_OFFSET_BITS 64
 
 
 // playmode values
@@ -108,9 +113,9 @@ class Decoder : public Thread, public Entry {
 
   void flush();
 
-  uint64_t filesize; // current file playing, size in bytes
-  uint64_t filepos; // current file playing, position in bytes
-  uint64_t newfilepos; // new position to skip in file
+  off64_t filesize; // current file playing, size in bytes
+  off64_t filepos; // current file playing, position in bytes
+  off64_t newfilepos; // new position to skip in file
 
   int fd;
   FILE *playlist_fd;
