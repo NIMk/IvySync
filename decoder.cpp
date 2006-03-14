@@ -31,12 +31,15 @@
 #include <utils.h>
 #include <gui.h>
 
+
+
 Decoder::Decoder()
-  : Thread() {
+  : Thread(), Entry() {
   fd = 0;
-  playmode = PLAY;
+  playmode = SINGLE;
   position = -1;
   playing = false;
+  stopped = false;
   dummy = false;
   gui = false;
   quit = true;
@@ -44,6 +47,8 @@ Decoder::Decoder()
   filesize = 0L;
   filepos = 0L;
   newfilepos = 0L;
+
+  playlist_fd = 0;
 
   buffo = NULL;
 }
@@ -60,7 +65,6 @@ bool Decoder::init(char *dev) {
   if(dummy) {
 
     N("running in dummy test run - no device opened");
-    device = dev;
 
   } else {
 
@@ -72,8 +76,10 @@ bool Decoder::init(char *dev) {
 
   }
 
+  // save the path to the device
+  strncpy(device, dev, MAXPATH);
+
   // parse the last 2 cyphers of the device path
-  device = dev;
   len = strlen(dev);
   // last two chars of the device name are the number
   device_num = atoi(&dev[len-2]);
@@ -106,33 +112,44 @@ bool Decoder::setup(bool *sync, int bufsize) {
 void Decoder::close() {
   playing = false;
   quit = true;
+
   if(running) {
     D("thread was running, waiting to join...");
     join();
   }
   if(fd) ::close(fd);
+
+  position = -1;
+
+  // delete playlist entries
+  empty();
+
+
 }
 
 void Decoder::update() {
   if(position<0) { // first time we play from the playlist
-    position = 0;
+
+    position = 1;
+
   } else {
     
     switch(playmode) {
 
     case PLAY: // next
 
-      if( position+1 > (int)playlist.size()-1 )
-	stop();
-      else
-	position++;
+      position++;
 
-      D("update: position is now %u", position);
+      if( position > playlist.len() ) {
+	//	stop();
+	position = 1;
+      }
+
       break;
 
     case CONT: // next or first if at the end
 
-      if( position+1 > (int)playlist.size()-1 ) position = 1;
+      if( position >= (int)playlist.len() ) position = 1;
       else position++;
 
       break;
@@ -145,6 +162,10 @@ void Decoder::update() {
       // play a random one
       break;
 
+    case SINGLE:
+      stop();
+      break;
+
     default:
       stop();
       // just stop
@@ -154,7 +175,17 @@ void Decoder::update() {
   }
   
   // current movie is now in playlist[position];
-
+  if( ! playlist.len() ) D("playlist empty");
+  else {
+    D("current playlist at position %u:", position);
+    int c;
+    for(c=1; c<=playlist.len(); c++) {
+      D("%s[%u] %s",
+	(c==position)?"->":"  ",
+	c, playlist[c]->name);
+    }
+  }
+  
   // refresh the GUI if present
   if(gui) gui->refresh();
 
@@ -165,7 +196,8 @@ void Decoder::update() {
 void Decoder::run() {
   int in, written, writing;
   uint8_t *buf;
-  string movie;
+  Entry *movie;
+
 
   if(!fd && !dummy) {
     E("thread %u falling down: no device opened",pthread_self());
@@ -176,7 +208,7 @@ void Decoder::run() {
 
   D("thread %u launched",pthread_self());
 
-  // set max realtime priority
+//  set max realtime priority
 //  if( set_rtpriority(true) )
 //    A("thread %u running on max realtime priority",pthread_self());
   
@@ -184,62 +216,94 @@ void Decoder::run() {
 
     update();
 
-    // if is not playling, sleep
-    while(!playing && !quit)
-      jsleep(0,1);
     if(quit) break;
+
+    if(stopped) {
+      stopped = false;
+      playing = false;
+    }
+
+    // if is not playing, sleep
+    while(!playing && !quit) jsleep(0,100);
     ///////////////////////////
 
+    // check it out from the playlist
     movie = playlist[position];
+    if(!movie) {
+      E("no movie at position %i", position);
+      playing = false;
+      continue;
+    }
 
-    playlist_fd = fopen( movie.c_str(), "rb" );
+    // just to be sure
+    if(playlist_fd) fclose(playlist_fd);
+
+    // STAT METHOD FOR FILESIZE
+//     // check if it exists and ackowledge filesize
+//     if( stat(movie->name, &moviestat) < 0 ) {
+//       E("error %u on movie %s: %s", errno, movie->name, strerror(errno));
+//       if(errno == 75) // value too large for defined datatype
+// 	// we just deactivate seek and position handling
+// 	filesize = 0x0;
+//       else
+// 	continue;
+//     } else
+//       filesize = moviestat.st_size;
+
+    playlist_fd = fopen( movie->name, "rb" );
     if(!playlist_fd) {
-      E("can't open %s: %s (%i)", movie.c_str(), strerror(errno), errno);
+      E("can't open %s: %s (%i)", movie->name, strerror(errno), errno);
 
       if(errno==27) { // EOVERFLOW - file too large on Linux/Glibc
 
 	int tmpfd;
-	tmpfd = open( movie.c_str(), O_RDONLY|O_LARGEFILE);
+	tmpfd = open( movie->name, O_RDONLY|O_LARGEFILE);
 
 	if(!tmpfd) {
 	  E("failed opening with largefile support: %s",strerror(errno));
-	  update();
 	  continue;
         } else playlist_fd = fdopen( tmpfd , "rb" );
 
       } else {
-        update();
         continue;
       }
     }
 
-    N("now playing %s",movie.c_str());
+    N("now playing %s",movie->name);
     
     // read the total length of movie file
     fseek(playlist_fd, 0L, SEEK_END);
     filesize = ftell(playlist_fd);
-    fseek(playlist_fd, 0L, SEEK_SET);
-    filepos = 0L; // set position at the beginning
+    // set position at the beginning
+    filepos = 0L;
+    fseek(playlist_fd, filepos, SEEK_SET);
+    //////////////////////////////////////
+
+    // ??? or should we use:
+    //    fgetpos(playlist_fd, &filesize);
+    //    fsetpos(playlist_fd, &filepos);
+    // none seem to work with files > 2GB
     
-    A("movie length: %lu (bytes)",filesize);
+    if(filesize)
+      A("movie length: %lu KB",filesize/1024);
+    else
+      A("movie is too large to be seekable");
 
     do { // inner reading loop
 
       // update the GUI
       if(gui) gui->refresh();
-      
-      // if is not playling, sleep
-      while(!playing && !quit) {
-	jsleep(0,200);
-      }
-      
 
-      if(quit) break;
-      ///////////////////////////
+      // process asynchronous flags
+      if(quit || stopped) break;
+      while(!playing && !quit) jsleep(0,100);
+      //////////////////////////////
 
+
+      // read in the data
       in = fread(buffo, 1, buffo_size, playlist_fd);
       if( feof(playlist_fd) || in<1 ) { // EOF
-	D("end of file: %s",movie.c_str());
+	D("end of file %s",movie->name);
 	break;
       }
       
@@ -248,7 +312,7 @@ void Decoder::run() {
       buf = buffo;
       
       if(!*syncstart) {
-	unlock();
+	//	unlock();
 	while(!*syncstart) jsleep(0,1); // check every nanosecond
       }
       
@@ -256,7 +320,7 @@ void Decoder::run() {
 	
 	buf += written;
 
-	if(quit) break;
+	//	if(quit || stopped) break;
 
 	if(dummy) // emulation mode with no device (for devel)
 	  written = writing; 
@@ -276,16 +340,23 @@ void Decoder::run() {
       
     } while(in>0 && !quit); // read/write inner loop
     
-    fclose(playlist_fd);
-    playlist_fd = 0;
     clear();
+    // close the file playing
+    A("end of movie %s", movie->name); 
+    if(playlist_fd) {
+      fclose(playlist_fd);
+      playlist_fd = 0;
+    }
 
   } // run() thread loop
 
-  if(playlist_fd)
-    fclose(playlist_fd); // be sure we close
-  playlist_fd = 0;
   clear();
+  // close the file playing
+  if(playlist_fd) {
+    fclose(playlist_fd);
+    playlist_fd = 0;
+  }
+  A("quitting decoder for %s",device);
 
   D("thread %u finished", pthread_self());
   return;
@@ -315,13 +386,15 @@ void Decoder::flush() {
 
 bool Decoder::play() {
   playing = true;
+  stopped = false;
   return true;
 }
 
 bool Decoder::stop() {
-  newfilepos = 1;
-  clear();
-  playing = false;
+  //  newfilepos = 1;
+  //  clear();
+  //  playing = false;
+  stopped = true;
   return true;
 }
 
@@ -333,38 +406,42 @@ bool Decoder::pause() {
 bool Decoder::clear() {
   if(!fd) return false;
   
+  // close the device
   flush();
 
-  ::close(fd);
+  ::close(fd);  // *BLANK*
 
-  fd = ::open(device.c_str(), O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
+
+  // reopen the device again
+  fd = ::open(device, O_WRONLY|O_NDELAY,S_IWUSR|S_IWGRP|S_IWOTH);
   if(fd<0) {
-    D("error opening device %s: %s",device.c_str(),strerror(errno));
+    D("error opening device %s: %s",device,strerror(errno));
     return false;
   }
 
   return true;
 }
 
-bool Decoder::restart() {
-  playing = false;
-  position = 0;
-  return true;
-}
 
 int Decoder::getpos() {
   // filesize : 100 = filepos : x
   // filesize : filepos = 100 : x
   int percent;
 
-  percent = (filepos * 100) / filesize;
-  //  D("movie %s at position %u %% (%lu byte)",
-  //    movie.c_str(), percent, filepos);
+  if(!playlist_fd) return 0;
+  if(!filesize) return 0;
+
+  percent = (int) ( (filepos * 100) / filesize );
+  D("movie %s at position %u %% (%lu byte)",
+    playlist[position]->name, percent, filepos);
   return percent;
 }
 
 void Decoder::setpos(int pos) {
   // filesize : 100 = x : pos
+
+  if(!playlist_fd) return;
+  if(!filesize) return;
 
   newfilepos = (filesize * pos) / 100;
 
@@ -374,30 +451,34 @@ void Decoder::setpos(int pos) {
     
 
 bool Decoder::prepend(char *file) {
-  playlist.insert( playlist.begin(), file );
+
+  Entry *ent = new Entry();
+
+  ent->set_name(file);
+
+  playlist.prepend( ent );
+
   return true;
 }
 
 bool Decoder::append(char *file) {
-  playlist.push_back(file);
+
+  Entry *ent = new Entry();
+
+  ent->set_name(file);
+
+  playlist.append( ent );
+
   return true;
 }
 
 bool Decoder::insert(char *file, int pos) {
-  if(pos > (int)playlist.size() ) {
+  Entry *ent = new Entry();
 
-    // playlist is smaller than pos: append at the end
-    playlist.push_back(file);
-    
-  } else {
+  ent->set_name(file);
+  
+  playlist.insert( ent, pos );
 
-    vector<string>::iterator pl_iter;
-    int c;
-    for( pl_iter = playlist.begin(), c=1;
-	 c<pos; ++pl_iter, c++ );
-    playlist.insert( pl_iter, file );
-
-  }
   return true;
 }
 
@@ -408,23 +489,26 @@ bool Decoder::remove(char *file) {
 }
 */
 bool Decoder::remove(int pos) {
-  vector<string>::iterator pl_iter;
-  int c;
+  Entry *ent;
 
-  for( pl_iter = playlist.begin(), c=1;
-       pl_iter != playlist.end();
-       ++pl_iter, c++ )
-    if(c==pos) {
-      playlist.erase(pl_iter);
-      return true;
-    }
+  ent = playlist[pos];
 
-  return false;
+  if(!ent) return false;
+
+  delete ent;
+  
+  return true;
 }
 
 bool Decoder::empty() {
-  playlist.clear();
-  position = 0;
+  Entry *ent = playlist.begin();
+  while(ent) {
+    ent->rem();
+    delete ent;
+    ent = playlist.begin();
+  }
+  //  playlist.clear()
+  position = 1;
   return true;
 }
 
@@ -586,15 +670,17 @@ int Decoder::save() {
     E("can't save to %s: %s", path, strerror(errno));
     return -1;
   }
-  D("saving to configuration file %s",path);
-  for(c=1, pl_iter = playlist.begin();
-      pl_iter != playlist.end();
-      ++pl_iter, c++) {
 
-    pl = *pl_iter;
-    fputs(pl.c_str(),fd);
+  D("saving to configuration file %s",path);
+  Entry *ent;
+  ent = playlist.begin();
+  c = 0;
+  while(ent) {
+    fputs(ent->name, fd);
     fputs("\n",fd);
-    D("%u. %s",c,pl.c_str());
+    D("%u - %s", c, ent->name);
+    ent = ent->next;
+    c++;
   }
   fflush(fd);
   fclose(fd);

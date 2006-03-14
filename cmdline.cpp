@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 #include <signal.h>
 
 #include <decoder.h>
@@ -46,8 +47,8 @@ bool rpcdaemon = false;
 int rpcdaemonport = 2640;
 int videobuf = 64;
 
-// our global vector holding all instantiated decoders
-vector<Decoder*> decoders;
+// our global linklist holding all instantiated decoders
+Linklist decoders;
 
 // graphical interface
 Gui *gui;
@@ -74,8 +75,8 @@ char *short_options = "-hd:sb:x:p:gtD:";
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
-  { "buffer", required_argument, NULL, 'b'},
   { "scan", no_argument, NULL, 's'},
+  { "buffer", required_argument, NULL, 'b'},
   { "xmlrpc", required_argument, NULL, 'x'},
   { "playmode", required_argument, NULL, 'p'},
   { "gui", no_argument, NULL, 'g'},
@@ -88,31 +89,36 @@ const struct option long_options[] = {
 void quitproc (int Sig) { /* signal handling */
   N("received signal %u on process %u",Sig,getpid());  
   A("please wait while quitting threads");
-  vector<Decoder*>::iterator dec_iter;
 
   if(graphical) gtk_main_quit();
 
-  for( dec_iter = decoders.begin();
-       dec_iter != decoders.end();
-       ++dec_iter)
-    (*dec_iter)->close();
+  Decoder *dec;
+  dec = (Decoder*)decoders.begin();
+  while(dec) {
+    dec->close();
+    delete dec;
+    dec = (Decoder*)decoders.begin();
+  }
 
 }
 
-#define CHECK_DECODER \
-	if(!dec) { \
-          dec = new Decoder(); \
-	  if( dec->init("/dev/video16") ) { \
-	    decoders.push_back( dec ); \
-	  } else { \
-	    delete dec; \
-	    dec = NULL; \
-	  } \
-        }
+#define CHECK_DECODER                  \
+if(!dec) {                             \
+  dec = (Decoder*)decoders[1];         \
+  if(!dec) {                           \
+    dec = new Decoder();               \
+    if( dec->init("/dev/video16") ) {  \
+      decoders.append( dec );          \
+    } else {                           \
+      delete dec;                      \
+      dec = NULL;                      \
+    }                                  \
+  }                                    \
+}
 
 int cmdline(int argc, char **argv) {
   Decoder *dec = NULL;
-  FILE *fd;
+  FILE *fd = NULL;
   int c;
   int res;
 
@@ -132,7 +138,7 @@ int cmdline(int argc, char **argv) {
       dec = new Decoder();
       dec->dummy = dummytest;
       if( dec->init(optarg) )
-	decoders.push_back( dec );
+	decoders.append( dec );
       else {
 	E("can't initialize device %s",optarg);
 	delete dec;
@@ -195,6 +201,10 @@ int cmdline(int argc, char **argv) {
 
 	dec->playmode = RAND;
 
+      } else if( strncasecmp(optarg,"single",6) ==0 ) {
+	
+	dec->playmode = SINGLE;
+
       } else
 	E("unrecognized playmode: %s",optarg);
       
@@ -223,11 +233,16 @@ int cmdline(int argc, char **argv) {
 
     case 1:
       fd = fopen(optarg,"rb");
-      if(fd) {
+      if(!fd) {
+
+	E("file %s is not readable: %s",optarg, strerror(errno));
+
+      } else {
+
 	CHECK_DECODER;
 	dec->append( optarg );
 	fclose(fd);
-      } else E("file %s is not readable",optarg);
+      }
       
       break;
       
@@ -242,7 +257,6 @@ int cmdline(int argc, char **argv) {
 
 
 int main(int argc, char **argv) {
-  vector<Decoder*>::iterator dec_iter;
   Decoder *dec;
 
   set_debug(1);
@@ -264,7 +278,7 @@ int main(int argc, char **argv) {
 
   cmdline(argc, argv);
  
-  if( !decoders.size() ) {
+  if( !decoders.len() ) {
   	E("no decoder device is initialized, aborting operations");
 	exit(0);
   }
@@ -324,12 +338,11 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
   /// Syncstart!
-  for( dec_iter = decoders.begin();
-       dec_iter != decoders.end();
-       ++dec_iter) {
+  dec = (Decoder*)decoders.begin();
+  while(dec) {
 
-    dec = *dec_iter;
     dec->setup( &syncstart, videobuf );
+
     dec->launch();
 
     if( ! rpcdaemon ) {
@@ -338,10 +351,11 @@ int main(int argc, char **argv) {
       dec->play();
     }
 
+    dec = (Decoder*)dec->next;
   }
 
   if( ! rpcdaemon ) {  
-    N("Syncing %i players...",decoders.size());
+    N("Syncing %i players...",decoders.len());
     
     jsleep(0,500);
     A("Start!");
@@ -364,17 +378,20 @@ int main(int argc, char **argv) {
   } else {
 
     // run until all the channels are at the end
-    int still_running = decoders.size();
+    int still_running = decoders.len();
 
     while(still_running) {
+
       still_running = 0;
-      for( dec_iter = decoders.begin();
-	   dec_iter != decoders.end();
-	   ++dec_iter) {
-	
-	dec = *dec_iter;
+      dec = (Decoder*)decoders.begin();
+
+      while(dec) {
+
 	if(dec->playing) still_running++;
+
 	jsleep(1,0); // 1 second delay check
+
+	dec = (Decoder*)dec->next;
       }
     }
   }

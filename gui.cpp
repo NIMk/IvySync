@@ -239,13 +239,14 @@ gboolean DND_drop(GtkWidget *w, GdkDragContext *dc, gint x, gint y,
       for(p = (char*)pl->draglist->data; *p!='\0'; p++)
 	if(!isdigit(*p)) *p=' ';
       numpos = atoi((char*)pl->draglist->data);
-      D("move entry %u:%s into slot %u",numpos, (char*)pl->decoder->playlist[numpos-1].c_str(),row+1);
+      D("move entry %u:%s into slot %u",numpos,
+	(char*)pl->decoder->playlist[numpos-1]->name,row+1);
       numpos--;
 
       if(row>numpos) row++;
 
       pl->decoder->insert
-	( (char*)pl->decoder->playlist[numpos].c_str(), row );
+	( (char*)pl->decoder->playlist[numpos]->name, row );
 
       if(row<numpos) numpos++; // if moves up then the source shifts down one pos
 
@@ -489,29 +490,28 @@ Playlist::~Playlist() {
 // read again the playlist from the decoder and fill it up
 int Playlist::refresh() {
   GtkTreeIter iter; // static
-  vector<string>::iterator pl_iter;
-  string pl;
+  Entry *ent;
   char tmp[16];
   int c;
 
   gtk_tree_store_clear(treestore);
 
-  for(c=1, pl_iter = decoder->playlist.begin();
-      pl_iter != decoder->playlist.end();
-      ++pl_iter, c++) {
-
-    pl = *pl_iter;
-
+  c = 0;
+  ent = decoder->playlist.begin();
+  while(ent) {
     gtk_tree_store_append(treestore,&iter,NULL);
-    
+
     snprintf(tmp,15,"%s%u",
 	     ((decoder->position+1)==c)?"->":"  ",
 	     c);
+
     gtk_tree_store_set(treestore,&iter,
 		       POSITION, tmp,
-		       FILENAME, pl.c_str(),
+		       FILENAME, ent->name,
 		       -1);
 
+    ent = ent->next;
+    c++;
   }
 
   return 1;
@@ -557,17 +557,15 @@ Gui::~Gui() {
   gtk_widget_destroy(window);
 }
 
-bool Gui::init(vector<Decoder*> *devices) {
-  vector<Decoder*>::iterator dev_iter;
+bool Gui::init(Linklist *devices) {
   Decoder *dec;
   Playlist *pl;
   int c;
 
-  for(c=1, dev_iter = devices->begin();
-      dev_iter != devices->end();
-      ++dev_iter, c++) {
+  c = 1;
+  dec = (Decoder*)devices->begin();
+  while(dec) {
 
-    dec = *dev_iter;
     dec->syncstart = &syncstart;
 
     pl = new Playlist(c);
@@ -582,8 +580,10 @@ bool Gui::init(vector<Decoder*> *devices) {
     char tmp[256];
     snprintf(tmp,255,"/dev/video%u",dec->device_num);
     gtk_notebook_set_tab_label_text ((GtkNotebook*)notebook,
-				     gtk_notebook_get_nth_page((GtkNotebook*)notebook, c-1), tmp);
+				     gtk_notebook_get_nth_page((GtkNotebook*)notebook,
+							       c-1), tmp);
 
+    c++;
   }
   return true;
 }

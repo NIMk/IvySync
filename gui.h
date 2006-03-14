@@ -2,10 +2,18 @@
 #ifndef __GUI_H__
 #define __GUI_H__
 
+
+
 #include <decoder.h>
 #include <utils.h>
 
 #include <gtk/gtk.h>
+
+// damn STL
+#include <vector>
+using namespace std;
+using namespace __gnu_cxx;
+
 
 class Playlist {
  public:
@@ -69,7 +77,7 @@ class Gui {
   Gui();
   ~Gui();
   
-  bool init(vector<Decoder*> *devices);
+  bool init(Linklist *devices);
   void start();
 
   bool syncstart;

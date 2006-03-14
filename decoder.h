@@ -24,25 +24,31 @@
 #define __DECODER_H__
 
 #include <iostream>
-#include <string>
-#include <vector>
 #include <pthread.h>
 #include <inttypes.h>
 
+#include <linklist.h>
 #include <thread.h>
 
-using namespace std;
-using namespace __gnu_cxx;
+/* On many architectures both off_t and long are 32-bit types, but
+   compilation with #define _FILE_OFFSET_BITS 64 will turn off_t into
+   a 64-bit type. - see man fseeko(3) */
+#define _FILE_OFFSET_BITS 64
+
 
 // playmode values
-#define PLAY 1
-#define CONT 2
-#define LOOP 3
-#define RAND 4
+#define PLAY   1
+#define CONT   2
+#define LOOP   3
+#define RAND   4
+#define SINGLE 5
+
+// maximum path lenght
+#define MAXPATH 512
 
 class Playlist; // graphical interface
 
-class Decoder : public Thread {
+class Decoder : public Thread, public Entry {
 
  public:
   Decoder();
@@ -68,25 +74,29 @@ class Decoder : public Thread {
 
   int playmode; ///< PLAY, CONT, LOOP or RAND
   int position; ///< current position in playlist (read-only)
-  string current; ///< path of movie currently playing
+
 
   bool play();
   bool stop();
   bool pause();
   bool clear();
-  bool restart();
 
-  int  getpos();
-  void setpos(int pos);
+  int getpos();
+  void  setpos(int pos);
 
+  /** state flags for use in the inner loop
+      the following booleans are changed by asynchronous calls
+      then behaviour is synched and executed in the main loop */
   bool playing;
+  bool stopped;
   
   bool *syncstart;
 
-  string device;  
+  char device[MAXPATH];
   int device_num;
 
-  vector<string> playlist;
+  Linklist playlist;
+  Entry *current; ///< path of movie currently playing
 
   Playlist *gui; ///< pointer to the GUI, NULL if none
 
@@ -98,9 +108,9 @@ class Decoder : public Thread {
 
   void flush();
 
-  long long filesize; // current file playing, size in bytes
-  long long filepos; // current file playing, position in bytes
-  long long newfilepos; // new position to skip in file
+  uint64_t filesize; // current file playing, size in bytes
+  uint64_t filepos; // current file playing, position in bytes
+  uint64_t newfilepos; // new position to skip in file
 
   int fd;
   FILE *playlist_fd;

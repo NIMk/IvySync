@@ -8,7 +8,7 @@
 import sys
 from string import atoi
 
-# Medusa and xmlrpclib client functions
+# xmlrpclib client functions
 from socket import gethostname
 from xmlrpclib import Transport, dumps
 
@@ -57,7 +57,11 @@ if __name__ == '__main__':
     
     connection = xmlrpc_connection()
 
+#    if(sys.argc):
+#    	cmd = "none"
+#    else:
     cmd = sys.argv[1]
+
     
     if not cmd in commands:
 

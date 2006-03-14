@@ -36,11 +36,11 @@ IvySyncDaemon::IvySyncDaemon(XmlRpcServer *srv) {
 }
 
 bool IvySyncDaemon::init(int port) {
-  // guess where this number comes from ? ;)
+
   if( ! xmlrpc->bindAndListen(port) ) return false;
   
-  // let's be introspective so we list our own methods
-  xmlrpc->enableIntrospection(true);
+  //  to be introspective we can list our own methods
+  //  xmlrpc->enableIntrospection(true);
   
   return true;
 }
@@ -60,53 +60,51 @@ void IvySyncDaemon::run(double mstime) {
 }
 
 
-Play::Play(XmlRpcServer* srv, vector<Decoder*> *decoders)
+Play::Play(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("Play", srv),
     IvySyncPublicMethod(decoders)
 { }
 
-Stop::Stop(XmlRpcServer* srv, vector<Decoder*> *decoders)
+Stop::Stop(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("Stop", srv),
     IvySyncPublicMethod(decoders)
 { }
 
-Pause::Pause(XmlRpcServer* srv, vector<Decoder*> *decoders)
+Pause::Pause(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("Pause", srv),
     IvySyncPublicMethod(decoders)
 { }
 
-GetPos::GetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
+GetPos::GetPos(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("GetPos", srv),
     IvySyncPublicMethod(decoders)
 { }
 
-SetPos::SetPos(XmlRpcServer* srv, vector<Decoder*> *decoders)
+SetPos::SetPos(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("SetPos", srv),
     IvySyncPublicMethod(decoders)
 { }
 
-Open::Open(XmlRpcServer* src, vector<Decoder*> *decoders)
+Open::Open(XmlRpcServer* src, Linklist *decoders)
   : XmlRpcServerMethod("Open", src),
     IvySyncPublicMethod(decoders)
 { }
 
-Quit::Quit(XmlRpcServer* src, vector<Decoder*> *decoders)
+Quit::Quit(XmlRpcServer* src, Linklist *decoders)
   : XmlRpcServerMethod("Quit", src),
     IvySyncPublicMethod(decoders)
 { }
 
 void Quit::execute(XmlRpcValue &params, XmlRpcValue &result) {
   Decoder *dec;
-  vector<Decoder*>::iterator iter;
+  
+  dec = (Decoder*)decoders->begin();
+  while(dec) {
 
-  for(iter = decoders->begin();
-      iter != decoders->end();
-      ++iter) {
-    
-    dec = *iter;
     dec->stop();
     dec->close();
-
+    
+    dec = (Decoder*)dec->next;
   }
 
   result = 1.0;
@@ -126,13 +124,15 @@ void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
   }
   
   // get out the decoder parameter
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
   
   // get out the path to the file to be opened
   path = (char*) (std::string(params[1])).c_str();
-  D("XMLRPC: Open decoder %u file %s", decnum+1, path);
+  D("XMLRPC: Open decoder %u file %s", decnum, path);
 
   FILE *fd;
   fd = fopen(path, "r");
@@ -140,7 +140,8 @@ void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
     result = 0.0;
     return;
   } else fclose(fd);
-  
+
+  dec->stop();
   dec->empty();
   dec->append(path);
   result = 1.0;
@@ -157,11 +158,13 @@ void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
     return;
   }
 
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
 
-  D("XMLRPC: Play decoder %u", decnum+1 );
+  D("XMLRPC: Play decoder %u", decnum );
   result = (double) dec->play();
 }
 
@@ -177,11 +180,13 @@ void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
     return;
   }
 
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
 
-  D("XMLRPC: Stop decoder %u", decnum+1);
+  D("XMLRPC: Stop decoder %u", decnum);
   result = (double) dec->stop();
 }
 
@@ -195,11 +200,13 @@ void Pause::execute(XmlRpcValue &params, XmlRpcValue &result) {
     return;
   }
 
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
 
-  D("XMLRPC: Pause decoder %u", decnum+1);
+  D("XMLRPC: Pause decoder %u", decnum);
   result = (double) dec->pause();
 }
 
@@ -214,18 +221,21 @@ void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
     return;
   }
 
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
 
   pos = (double) dec->getpos();
   result = pos;
-  D("XMLRPC: GetPos decoder %u returns %d", decnum+1, pos);
+  // D("XMLRPC: GetPos decoder %u returns %u", decnum, pos);
 
 }
 
 void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
+  int pos;
 
   if( params.size() < 2) {
     E("XMLRPC: SetPos called with invalid number of arguments (%u)",
@@ -233,11 +243,14 @@ void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
     return;
   }
 
-  decnum = (int) params[0] -1;
-  Decoder *dec = get_decoder( decnum );
-  if(!dec) { result = 0.0; return; }
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
 
-  D("XMLRPC: SetPos decoder %u", decnum+1);
-  dec->setpos( (int) params[1] );
+  pos = (int) params[1];
+  D("XMLRPC: SetPos decoder %u to position %i", decnum, pos);
+  dec->setpos( pos );
 }
 

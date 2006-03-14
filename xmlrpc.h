@@ -31,6 +31,11 @@
 
 using namespace XmlRpc;
 
+// damn STL
+#include <vector>
+using namespace std;
+using namespace __gnu_cxx;
+
 
 // METHODS:
 class Open;
@@ -60,20 +65,13 @@ private:
 class IvySyncPublicMethod {
 public:
   
-  IvySyncPublicMethod(vector<Decoder*> *decs) {
+  IvySyncPublicMethod(Linklist *decs) {
     decoders = decs;
   }
 
   ~IvySyncPublicMethod() { };
 
-  Decoder *get_decoder(int num) {
-    vector<Decoder*>::iterator dec_iter;
-    dec_iter = decoders->begin();
-    dec_iter += num;
-    return *dec_iter;
-  }
-  
-  vector<Decoder*> *decoders;
+  Linklist *decoders;
 
 };
 
@@ -84,7 +82,7 @@ public:
 class Play : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:
   
-  Play(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  Play(XmlRpcServer* srv, Linklist *decoders);
   
   ~Play() { };
   
@@ -99,7 +97,7 @@ public:
 class Stop : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:
   
-  Stop(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  Stop(XmlRpcServer* srv, Linklist *decoders);
   
   ~Stop() { };
   
@@ -113,7 +111,7 @@ public:
 class Pause : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:
   
-  Pause(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  Pause(XmlRpcServer* srv, Linklist *decoders);
   
   ~Pause() { };
   
@@ -127,7 +125,7 @@ public:
 class GetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:
   
-  GetPos(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  GetPos(XmlRpcServer* srv, Linklist *decoders);
   
   ~GetPos() { };
   
@@ -142,7 +140,7 @@ public:
 class SetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
  public:
 
-  SetPos(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  SetPos(XmlRpcServer* srv, Linklist *decoders);
 
   ~SetPos() { };
 
@@ -156,7 +154,7 @@ class SetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
 class Open : public XmlRpcServerMethod, IvySyncPublicMethod {
  public:
 
-  Open(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  Open(XmlRpcServer* srv, Linklist *decoders);
 
   ~Open() { };
 
@@ -170,7 +168,7 @@ class Open : public XmlRpcServerMethod, IvySyncPublicMethod {
 class Quit : public XmlRpcServerMethod, IvySyncPublicMethod {
  public:
 
-  Quit(XmlRpcServer* srv, vector<Decoder*> *decoders);
+  Quit(XmlRpcServer* srv, Linklist *decoders);
 
   ~Quit() { };
 
