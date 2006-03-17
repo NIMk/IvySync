@@ -12,9 +12,9 @@ GTKFLAGS = `pkg-config --cflags gtk+-2.0`
 GTKLIBS  = `pkg-config --libs   gtk+-2.0`
 
 # debugging flags:
-CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
+#CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
 # optimized flags:
-#CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math
+CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math
 
 
 

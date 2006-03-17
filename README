@@ -18,31 +18,29 @@ IvySync reaches to sync up to 4 video channels with frame precision and
 comes together with a user friendly graphical interface (GTK2) to  edit
 the playlists.
 
-It is possible to remotely control the playback and skip  positions  on
-videos sending commands across the network (XMLRPC).
+It is possible to remotely control the playlist and  playback  of  each
+video sending commands across the network (XMLRPC).
 Support for time  based  scheduling  of  different  playlists  is  also
 implemented (but still lacking a graphical interface) to let a  running
 syncstarter cycle various screening programs at different  hours,  days
 or months.
 
 
-IvySync has been employed by Montevideo / Time Based Arts to produce and
-exhibit video-art installations by, among the others:
+IvySync is a dyne.org free software production (GNU GPL)
+commissioned by Montevideo / Time Based Arts
+used to exhibit video-art installations by, among the  others:
 Linda Wallace, Calin Dan, Erwin Olaf, Sami Kallinen
 
 
-== documentation
+== DOCUMENTATION
 
-Visit  the  website  for  more  documentation, screenshots and download
-http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
-
-If you need more documentation or help in setting up a video syncstarter
-using this software, please consider hiring the services offered by
-Montevideo / Time Based Arts  http://montevideo.nl
+For more  documentation, screenshots and download, go to the website:
+     ______ http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
 
 
 
-== list of technical features
+
+== FEATURES
 
     * full quality s/video or composite multiple output 
 
@@ -63,18 +61,28 @@ Montevideo / Time Based Arts  http://montevideo.nl
     * time based scheduling of multiple playlists
 
 
-== requirements
+== REQUIREMENTS
 
     * GNU/Linux supported platform with ~500Mhz CPU 
 
     * IvyTV compatible hardware decoder 
 
-    * fairly good experience with *NIX systems 
+  ***   RENT or BUY a syncstarter pre-configured for your needs   ***
+  ***  warranty and delivery services available, please contact:  ***
+
+     Denis "Jaromil" Rojo         Netherlands Media Art Institute
+        software inventor   R&D   Montevideo / Time Based Arts
+      GNU/Linux developer         Dyne.org Foundation
+     ------------------------------------------------------------
+      Tel: +31 20 6237101 121 ___ Tue and Fri, 10:30 - 17:30 CET
+      Fax: +31 20 6244423    Irc: irc.freenode.net  /msg jaromil
+      Post:  NMAI/Artlab   Keizersgracht 264   1016 EV Amsterdam
 
 
-== disclaimer
 
- IvySync is Copyright (C) 2004-2006 by Denis "Jaromil" Roio
+== DISCLAIMER
+
+ IvySync is Copyright (C) 2004-2006 by Denis Roio <jaromil@dyne.org>
 
 # This source code is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Public License as published 
