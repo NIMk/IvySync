@@ -292,6 +292,7 @@ int main(int argc, char **argv) {
     }
 
   if(graphical) {
+    A("activating graphical user interface for playlist configuration");
     //  gtk_set_locale();
     gtk_init(&argc,&argv);
     //  add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");  
@@ -308,6 +309,7 @@ int main(int argc, char **argv) {
   ////////////////////////////////
   /// setup the XMLRPC interface
   if(rpcdaemon) {
+    A("activating XMLRPC daemon listener for remote network control");
 
     xmlrpc = new XmlRpcServer();
 
@@ -328,7 +330,7 @@ int main(int argc, char **argv) {
       delete xmlrpc;
       rpcdaemon = false;
     } else
-      N("XMLRPC daemon listening for commands on port %u",
+      A("XMLRPC daemon listening for commands on port %u",
 	rpcdaemonport);
   }
 
@@ -338,6 +340,8 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
   /// Syncstart!
+  
+  N("Proceeding to syncstart");
   dec = (Decoder*)decoders.begin();
   while(dec) {
 
@@ -355,7 +359,7 @@ int main(int argc, char **argv) {
   }
 
   if( ! rpcdaemon ) {  
-    N("Syncing %i players...",decoders.len());
+    A("Syncing %i players...",decoders.len());
     
     jsleep(0,500);
     A("Start!");

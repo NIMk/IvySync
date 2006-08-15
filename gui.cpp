@@ -524,6 +524,7 @@ int Playlist::refresh() {
 
 Gui::Gui() {
 
+  D("instantiating Gui class");
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_name (window, "window");
   gtk_widget_set_size_request (window, 400, 300);
@@ -535,12 +536,14 @@ Gui::Gui() {
   gtk_widget_show (vbox);
   gtk_container_add(GTK_CONTAINER(window), vbox);
 
+  D("gtk_notebook_new");
   notebook = gtk_notebook_new ();
   gtk_widget_set_name (notebook, "notebook");
   gtk_widget_show (notebook);
   gtk_box_pack_start (GTK_BOX (vbox), notebook, TRUE, TRUE, 0);
   //gtk_container_add (GTK_CONTAINER (vbox), notebook);
-  
+ 
+  D("syncbutton"); 
   syncbutton = gtk_toggle_button_new_with_mnemonic ("gtk-media-play");
   gtk_button_set_use_stock (GTK_BUTTON (syncbutton), TRUE);
   gtk_widget_set_name (syncbutton, "sync_button");
@@ -563,26 +566,32 @@ bool Gui::init(Linklist *devices) {
   int c;
 
   c = 1;
+
+  D("Gui::init");
+
   dec = (Decoder*)devices->begin();
   while(dec) {
 
     dec->syncstart = &syncstart;
 
+    D("new Playlist(%i)",c);
     pl = new Playlist(c);
 
     pl->decoder = dec; // store the decoder pointer in the playlist
     dec->gui = pl; // store the GUI pointer in the decoder (cross reference)
 
+    D("refresh the playlist");
     pl->refresh(); // refresh with the filenames
     playlist.push_back(pl); // store the playlist in the gui array
     
+    D("add to the container");
     gtk_container_add(GTK_CONTAINER(notebook), pl->widget);
     char tmp[256];
     snprintf(tmp,255,"/dev/video%u",dec->device_num);
     gtk_notebook_set_tab_label_text ((GtkNotebook*)notebook,
 				     gtk_notebook_get_nth_page((GtkNotebook*)notebook,
 							       c-1), tmp);
-
+    dec = (Decoder*)dec->next;
     c++;
   }
   return true;
