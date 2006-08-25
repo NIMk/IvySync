@@ -448,7 +448,14 @@ void Decoder::setpos(int pos) {
   D("Decoder::setpos(%u) : newfilepos = %lu",
     pos, newfilepos);
 }
-    
+
+off64_t Decoder::getoffset() {
+  return filepos;
+}
+
+void Decoder::setoffset(off64_t pos) {
+  (pos < filesize) ? newfilepos = pos : newfilepos = filesize;
+}
 
 bool Decoder::prepend(char *file) {
 

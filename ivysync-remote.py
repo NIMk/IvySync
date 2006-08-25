@@ -53,7 +53,7 @@ class xmlrpc_connection:
 
 if __name__ == '__main__':
 
-    commands = ("Play", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos")
+    commands = ("Play", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos", "GetOffset", "SetOffset")
     
     connection = xmlrpc_connection()
 
@@ -87,6 +87,12 @@ if __name__ == '__main__':
         (res,) = connection.remote(cmd, (chan, pos))
         answer = "Channel " + str(chan) + " is now at " + str(pos) + "%"
 
+    elif cmd == "SetOffset":
+	chan = int( sys.argv[2] )
+	pos  = int( sys.argv[3] )
+
+	(res,) = connection.remote(cmd, (chan, pos))
+	answer = "Channel " + str(chan) + " is now at " + str(pos) + " byte offset"
 
     elif cmd == "GetPos":
 
@@ -94,7 +100,11 @@ if __name__ == '__main__':
         (res,) = connection.remote(cmd, (chan, 0))
         answer = "Channel " + str(chan) + " is now at " + str(res) + "%"
 
+    elif cmd == "GetOffset":
 
+        chan = int( sys.argv[2] )
+        (res,) = connection.remote(cmd, (chan, 0))
+        answer = "Channel " + str(chan) + " is now at " + str(res) + " byte offset"
 
     elif cmd == "Open":
 

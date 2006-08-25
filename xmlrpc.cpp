@@ -85,6 +85,16 @@ SetPos::SetPos(XmlRpcServer* srv, Linklist *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+GetOffset::GetOffset(XmlRpcServer* srv, Linklist *decoders)
+  : XmlRpcServerMethod("GetOffset", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
+SetOffset::SetOffset(XmlRpcServer* srv, Linklist *decoders)
+  : XmlRpcServerMethod("SetOffset", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
 Open::Open(XmlRpcServer* src, Linklist *decoders)
   : XmlRpcServerMethod("Open", src),
     IvySyncPublicMethod(decoders)
@@ -233,6 +243,28 @@ void GetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
 }
 
+void GetOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+  int pos;
+
+  if( params.size() < 1) {
+    E("XMLRPC: GetOffset called with invalid number of arguments (%u)",
+      params.size() );
+    return;
+  }
+
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
+  
+  pos = (int) dec->getoffset();
+  result = pos;
+  D("XMLRPC: GetOffset decoder %u returns %d", decnum, pos);
+}
+
+
 void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
   int pos;
@@ -254,3 +286,23 @@ void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
   dec->setpos( pos );
 }
 
+void SetOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  int decnum;
+  double pos;
+  
+  if( params.size() < 2) {
+    E("XMLRPC: SetOffset called with invalid number of arguments (%u)",
+      params.size() );
+    return;
+  }
+
+  decnum = (int) params[0];
+  Decoder *dec = (Decoder*) (*decoders)[decnum];
+  if(!dec) {
+    E("video decoder %i not present", decnum);
+    result = 0.0; return; }
+  
+  pos = (int) params[1];
+  D("XMLRPC: SetOffset decoder %u to position %d", decnum, pos);
+  dec->setoffset( (off64_t) pos );
+}

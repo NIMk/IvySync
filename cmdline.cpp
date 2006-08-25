@@ -319,6 +319,8 @@ int main(int argc, char **argv) {
     new Pause (xmlrpc, &decoders);
     new GetPos(xmlrpc, &decoders);
     new SetPos(xmlrpc, &decoders);
+    new GetOffset(xmlrpc, &decoders);
+    new SetOffset(xmlrpc, &decoders);
     new Open  (xmlrpc, &decoders);
     new Quit  (xmlrpc, &decoders);
 

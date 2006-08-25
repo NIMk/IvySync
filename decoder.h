@@ -86,8 +86,11 @@ class Decoder : public Thread, public Entry {
   bool pause();
   bool clear();
 
-  int getpos();
+  int   getpos();
   void  setpos(int pos);
+
+  off64_t getoffset();
+  void setoffset(off64_t pos);
 
   /** state flags for use in the inner loop
       the following booleans are changed by asynchronous calls

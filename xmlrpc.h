@@ -136,6 +136,18 @@ public:
   
 };
 
+class GetOffset : public XmlRpcServerMethod, IvySyncPublicMethod {
+ public:
+
+  GetOffset(XmlRpcServer* srv, Linklist *decoders);
+  
+  ~GetOffset() { };
+
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+
+  std::string help() { 
+    return std::string("Return position of channel in byte offset"); }
+};  
 
 class SetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
  public:
@@ -148,6 +160,21 @@ class SetPos : public XmlRpcServerMethod, IvySyncPublicMethod {
   
   std::string help() { 
     return std::string("Skip channel to position in percentage"); }
+
+};
+
+
+class SetOffset : public XmlRpcServerMethod, IvySyncPublicMethod {
+ public:
+
+  SetOffset(XmlRpcServer* srv, Linklist *decoders);
+
+  ~SetOffset() { };
+
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+  
+  std::string help() { 
+    return std::string("Skip channel to position in byte offset"); }
 
 };
 
