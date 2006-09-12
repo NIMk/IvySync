@@ -1,0 +1,102 @@
+          ,-_/          .---.             
+          '  | .  , . . \___  . . ,-. ,-. 
+          .^ | | /  | |     \ | | | | |   
+          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.4]
+                     /|        /|         
+                    `-'       `-'    by Denis "jaromil" Rojo
+		                     Montevideo Artlab R&D
+
+
+Interactive customization - branched from mainstream ivysync
+			    commissioned by Lydia Schouten
+
+IvySync provides synced playback of multiple videos on multiple screens
+
+In the video art field there are many artworks requiring the synced and
+parallel  playback  of  audio/video  materials:  IvySync  provides such
+functionality  for  IvyTV  supported  hardware  decoders, with accurate
+frame precision. 
+
+IvySync reaches to sync up to 4 video channels with frame precision and
+comes together with a user friendly graphical interface (GTK2) to  edit
+the playlists.
+
+It is possible to remotely control the playlist and  playback  of  each
+video sending commands across the network (XMLRPC).
+Support for time  based  scheduling  of  different  playlists  is  also
+implemented (but still lacking a graphical interface) to let a  running
+syncstarter cycle various screening programs at different  hours,  days
+or months.
+
+
+IvySync is a dyne.org free software production (GNU GPL)
+commissioned by Montevideo / Time Based Arts
+used to exhibit video-art installations by, among the  others:
+Linda Wallace, Calin Dan, Erwin Olaf, Sami Kallinen
+
+
+== DOCUMENTATION
+
+For more  documentation, screenshots and download, go to the website:
+     ______ http://montevideo.dyne.org/trac.cgi/wiki/IvySync 
+
+
+
+
+== FEATURES
+
+    * full quality s/video or composite multiple output 
+
+    * professional grade low cost solution 
+
+    * remotely controllable playback (XMLRPC)
+
+    * graphical interface for playlist scheduling 
+
+    * extensible, scriptable and reliable *NIX technology 
+
+    * frame accurate sync of DVD quality audio/video (MPEG2)
+
+    * streaming playback from a local network (with Samba)
+
+    * capable of syncing up to 4 videos 
+
+    * time based scheduling of multiple playlists
+
+
+== REQUIREMENTS
+
+    * GNU/Linux supported platform with ~500Mhz CPU 
+
+    * IvyTV compatible hardware decoder 
+
+  ***   RENT or BUY a syncstarter pre-configured for your needs   ***
+  ***  warranty and delivery services available, please contact:  ***
+
+     Denis "Jaromil" Rojo         Netherlands Media Art Institute
+        software inventor   R&D   Montevideo / Time Based Arts
+      GNU/Linux developer         Dyne.org Foundation
+     ------------------------------------------------------------
+      Tel: +31 20 6237101 121 ___ Tue and Fri, 10:30 - 17:30 CET
+      Fax: +31 20 6244423    Irc: irc.freenode.net  /msg jaromil
+      Post:  NMAI/Artlab   Keizersgracht 264   1016 EV Amsterdam
+
+
+
+== DISCLAIMER
+
+ IvySync is Copyright (C) 2004-2006 by Denis Roio <jaromil@dyne.org>
+
+# This source code is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Public License as published 
+# by the Free Software Foundation; either version 2 of the License,
+# or (at your option) any later version.
+#
+# This source code is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# Please refer to the GNU Public License for more details.
+#
+# You should have received a copy of the GNU Public License along with
+# this source code; if not, write to:
+# Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
