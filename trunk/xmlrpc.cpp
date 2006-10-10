@@ -147,6 +147,7 @@ void Open::execute(XmlRpcValue &params, XmlRpcValue &result) {
   FILE *fd;
   fd = fopen(path, "r");
   if(!fd) {
+    E("error opening file '%s': %s", path, strerror(errno));
     result = 0.0;
     return;
   } else fclose(fd);

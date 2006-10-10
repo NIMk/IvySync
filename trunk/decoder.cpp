@@ -432,7 +432,7 @@ int Decoder::getpos() {
   if(!filesize) return 0;
 
   percent = (int) ( (filepos * 100) / filesize );
-  D("movie %s at position %u %% (%lu byte)",
+  D("movie %s at position~ %u %% (%lu byte)",
     playlist[position]->name, percent, filepos);
   return percent;
 }
