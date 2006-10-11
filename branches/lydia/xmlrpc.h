@@ -93,6 +93,23 @@ public:
   
 };
 
+class SyncStart : public XmlRpcServerMethod, IvySyncPublicMethod {
+public:
+  
+  SyncStart(XmlRpcServer* srv, Linklist *decoders);
+  
+  ~SyncStart() { };
+  
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+  
+  std::string help() { 
+    return std::string("Start playing all channels in sync"); }
+
+ private:
+  bool syncer;
+
+};
+
 
 class Stop : public XmlRpcServerMethod, IvySyncPublicMethod {
 public:

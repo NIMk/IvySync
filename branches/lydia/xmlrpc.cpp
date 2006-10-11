@@ -65,6 +65,11 @@ Play::Play(XmlRpcServer* srv, Linklist *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+SyncStart::SyncStart(XmlRpcServer* srv, Linklist *decoders)
+  : XmlRpcServerMethod("SyncStart", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
 Stop::Stop(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("Stop", srv),
     IvySyncPublicMethod(decoders)
@@ -178,7 +183,27 @@ void Play::execute(XmlRpcValue &params, XmlRpcValue &result) {
   result = (double) dec->play();
 }
 
+void SyncStart::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
+  D("syncstart called");
+
+  Decoder *dec = (Decoder*) decoders->begin();
+  
+  while(dec) {
+    dec->stop();
+    dec->setup(&syncer, 0);
+    dec->play();
+    dec = (Decoder*) dec->next;
+  }
+
+  N("synced start in 3 seconds...");
+  jsleep(3,0);
+
+  syncer = true;
+
+  result = 1.0;
+  A("...start!");
+}
 
 void Stop::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;

@@ -53,7 +53,7 @@ class xmlrpc_connection:
 
 if __name__ == '__main__':
 
-    commands = ("Play", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos", "GetOffset", "SetOffset")
+    commands = ("Play", "SyncStart", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos", "GetOffset", "SetOffset")
     
     connection = xmlrpc_connection()
 
@@ -68,9 +68,16 @@ if __name__ == '__main__':
         print "no valid command recognized, list of valid commands:"
         print commands
         sys.exit(2)
-        
+      
+    if   cmd == "SyncStart":
+	(res,) = connection.remote(cmd, (0, 0))
+	if res == 1:
+		answer = "Sync starting OK"
+	else:
+		answer = "Error in sync starting"
 
-    if cmd == "Quit":
+
+    elif cmd == "Quit":
         
         (res,) = connection.remote(cmd, (0, 0))
         if res == 1:

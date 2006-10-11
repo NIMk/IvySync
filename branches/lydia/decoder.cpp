@@ -90,9 +90,14 @@ bool Decoder::init(char *dev) {
 
 bool Decoder::setup(bool *sync, int bufsize) {
 
+  quit = false;
+
   // save the syncstarter flag
   syncstart = sync;
-  
+
+  // if no buffer size is specified, use old one
+  if(!bufsize) return(true);
+
   if(buffo) free(buffo);
   
   buffo = (uint8_t*) calloc( bufsize+1, 1024); // +1 safety bound
@@ -103,7 +108,7 @@ bool Decoder::setup(bool *sync, int bufsize) {
   
   buffo_size = bufsize*1024;
 
-  quit = false;
+
 
   return(true);
 			     
@@ -449,12 +454,13 @@ void Decoder::setpos(int pos) {
     pos, newfilepos);
 }
 
-off64_t Decoder::getoffset() {
-  return filepos;
+int Decoder::getoffset() {
+  return( (int)(filepos / 100000) );
 }
 
-void Decoder::setoffset(off64_t pos) {
-  (pos < filesize) ? newfilepos = pos : newfilepos = filesize;
+void Decoder::setoffset(int pos) {
+  off64_t offset = pos * 100000;
+  (offset < filesize) ? newfilepos = offset : newfilepos = filesize;
 }
 
 bool Decoder::prepend(char *file) {

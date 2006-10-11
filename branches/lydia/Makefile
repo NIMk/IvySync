@@ -10,8 +10,6 @@ LINKER = ld
 
 GTKFLAGS = `pkg-config --cflags gtk+-2.0`
 GTKLIBS  = `pkg-config --libs   gtk+-2.0`
-AOFLAGS  = `pkg-config --cflags ao`
-AOFLAGS  = `pkg-config --libs   ao`
 
 
 # debugging flags:
@@ -32,7 +30,7 @@ xmlrpc:
 	cd xmlrpc++ && $(MAKE)
 
 ivysync: $(IVYSYNC_OBJ)
-	$(CPP) $(CPPFLAGS) -o ivysync $(IVYSYNC_OBJ) $(LIBS) $(GTKLIBS) $(AOLIBS)
+	$(CPP) $(CPPFLAGS) -o ivysync $(IVYSYNC_OBJ) $(LIBS) $(GTKLIBS)
 
 #make clean
 clean:
