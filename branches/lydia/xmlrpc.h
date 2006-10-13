@@ -195,6 +195,24 @@ class SetOffset : public XmlRpcServerMethod, IvySyncPublicMethod {
 
 };
 
+class SyncOffset : public XmlRpcServerMethod, IvySyncPublicMethod {
+public:
+  
+  SyncOffset(XmlRpcServer* srv, Linklist *decoders);
+  
+  ~SyncOffset() { };
+  
+  void execute(XmlRpcValue &params, XmlRpcValue &result);
+  
+  std::string help() { 
+    return std::string("Skip all channels to a certain offset and start playing in sync"); }
+
+ private:
+  bool syncer;
+
+};
+
+
 class Open : public XmlRpcServerMethod, IvySyncPublicMethod {
  public:
 

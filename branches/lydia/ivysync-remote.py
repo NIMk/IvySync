@@ -53,7 +53,7 @@ class xmlrpc_connection:
 
 if __name__ == '__main__':
 
-    commands = ("Play", "SyncStart", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos", "GetOffset", "SetOffset")
+    commands = ("Play", "SyncStart", "Stop", "Open", "Pause", "Quit", "GetPos", "SetPos", "GetOffset", "SetOffset", "SyncOffset")
     
     connection = xmlrpc_connection()
 
@@ -76,6 +76,15 @@ if __name__ == '__main__':
 	else:
 		answer = "Error in sync starting"
 
+    elif cmd == "SyncOffset":
+
+        pos  = int( sys.argv[2] )
+
+	(res,) = connection.remote(cmd, (pos, 0))
+        if res == 1:
+		answer = "Global sync to offset " + str(pos)
+	else:
+		answer = "Error in SyncOffset"
 
     elif cmd == "Quit":
         

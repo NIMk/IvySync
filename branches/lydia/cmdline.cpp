@@ -324,6 +324,7 @@ int main(int argc, char **argv) {
     new Open  (xmlrpc, &decoders);
     new Quit  (xmlrpc, &decoders);
     new SyncStart (xmlrpc, &decoders);
+    new SyncOffset(xmlrpc, &decoders);
 
     ivydaemon = new IvySyncDaemon(xmlrpc);
 

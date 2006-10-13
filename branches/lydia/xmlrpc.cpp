@@ -70,6 +70,7 @@ SyncStart::SyncStart(XmlRpcServer* srv, Linklist *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+
 Stop::Stop(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("Stop", srv),
     IvySyncPublicMethod(decoders)
@@ -90,6 +91,8 @@ SetPos::SetPos(XmlRpcServer* srv, Linklist *decoders)
     IvySyncPublicMethod(decoders)
 { }
 
+
+
 GetOffset::GetOffset(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("GetOffset", srv),
     IvySyncPublicMethod(decoders)
@@ -97,6 +100,11 @@ GetOffset::GetOffset(XmlRpcServer* srv, Linklist *decoders)
 
 SetOffset::SetOffset(XmlRpcServer* srv, Linklist *decoders)
   : XmlRpcServerMethod("SetOffset", srv),
+    IvySyncPublicMethod(decoders)
+{ }
+
+SyncOffset::SyncOffset(XmlRpcServer* srv, Linklist *decoders)
+  : XmlRpcServerMethod("SyncOffset", srv),
     IvySyncPublicMethod(decoders)
 { }
 
@@ -313,7 +321,7 @@ void SetPos::execute(XmlRpcValue &params, XmlRpcValue &result) {
 
 void SetOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
   int decnum;
-  double pos;
+  int pos;
   
   if( params.size() < 2) {
     E("XMLRPC: SetOffset called with invalid number of arguments (%u)",
@@ -331,3 +339,35 @@ void SetOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
   D("XMLRPC: SetOffset decoder %u to position %d", decnum, pos);
   dec->setoffset( (off64_t) pos );
 }
+
+void SyncOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
+  D("syncoffset called");
+  int offset;
+  
+  if( params.size() < 1) {
+    E("XMLRPC: SyncOffset called without offset argument");
+    return;
+  }
+
+  offset = (int) params[0];
+
+  Decoder *dec = (Decoder*) decoders->begin();
+  
+  while(dec) {
+    dec->stop();
+    dec->setup(&syncer, 0);
+    dec->setoffset( offset );
+    dec->play();
+    dec = (Decoder*) dec->next;
+  }
+  
+  N("global seek to offset %u",offset);
+  A("synced start in 3 seconds...");
+  jsleep(3,0);
+  
+  syncer = true;
+
+  result = 1.0;
+  A("...start!");
+}
+  
