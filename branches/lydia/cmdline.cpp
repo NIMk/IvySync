@@ -34,6 +34,7 @@
 
 #include <decoder.h>
 
+#include <sound_device.h>
 #include <xmlrpc.h>
 #include <gui.h>
 
@@ -51,13 +52,16 @@ int videobuf = 64;
 Linklist decoders;
 
 // graphical interface
-Gui *gui;
+Gui *gui = NULL;
 
 // xmlrpc interface
-XmlRpcServer *xmlrpc;
+XmlRpcServer *xmlrpc = NULL;
+
+// sound device
+SoundDevice *snd = NULL;
 
 // Threaded daemon
-IvySyncDaemon *ivydaemon;
+IvySyncDaemon *ivydaemon = NULL;
 
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
@@ -340,6 +344,12 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
 
+  ////////////////////////////////
+  /// Sound device
+  snd = new SoundDevice();
+  // open only for playback
+  snd->open(false, true);
+  ////////////////////////////////
 
 
   ////////////////////////////////
@@ -405,6 +415,7 @@ int main(int argc, char **argv) {
   }
 
   N("quit!");
+
 
   exit(1);
 }

@@ -64,16 +64,16 @@ static int pa_process( void *inputBuffer, void *outputBuffer,
 	unsigned long framesPerBuffer, 
 	PaTimestamp outTime, void *userData )
 {
-int i,n;
-void *rBuf;
-int readBytes;
-PaDevices *dev = (PaDevices *)userData;
-long len = framesPerBuffer * (PA_SAMPLES_PER_FRAME*sizeof(PA_SAMPLE_TYPE));
+  unsigned int i,n;
+  void *rBuf;
+  int readBytes;
+  PaDevices *dev = (PaDevices *)userData;
+  long len = framesPerBuffer * (PA_SAMPLES_PER_FRAME*sizeof(PA_SAMPLE_TYPE));
   if(inputBuffer != NULL) { /* handle input from soundcard */
-	if(dev->input->info)  {
+    if(dev->input->info)  {
       if(dev->input->info->maxInputChannels>1) {  
         readBytes = dev->input->pipe->write(len,inputBuffer);
-	  }
+      }
       else {
         rBuf = malloc(len);
         n=0;
@@ -85,26 +85,26 @@ long len = framesPerBuffer * (PA_SAMPLES_PER_FRAME*sizeof(PA_SAMPLE_TYPE));
         readBytes = dev->input->pipe->write(len,rBuf);
         free(rBuf);
       }
-	  if(readBytes <= 0) memset(inputBuffer,0,len);
-	}
+      if(readBytes <= 0) memset(inputBuffer,0,len);
+    }
   }
   if(outputBuffer != NULL) { /* handle output to soundcard */
-	if(dev->output->info) {
-	  if(dev->output->info->maxOutputChannels>1) {
-	     readBytes = dev->output->pipe->read(len,outputBuffer);
-	  }
+    if(dev->output->info) {
+      if(dev->output->info->maxOutputChannels>1) {
+	readBytes = dev->output->pipe->read(len,outputBuffer);
+      }
       else {
-	     rBuf = malloc(len);
-		 readBytes = dev->output->pipe->read(len,rBuf);
-		 n=0;
-         for(i=0;i<(len/sizeof(PA_SAMPLE_TYPE))/2;i++) {
-           ((float *)outputBuffer)[n]=((float *)rBuf)[i];
-           ((float *)outputBuffer)[n+1]=((float *)rBuf)[i];
-		   n+=2;
-         }
-		 free(rBuf);
-	  }
-	  if(readBytes <= 0) memset(outputBuffer,0,len);
+	rBuf = malloc(len);
+	readBytes = dev->output->pipe->read(len,rBuf);
+	n=0;
+	for(i=0; i < (len / sizeof(PA_SAMPLE_TYPE)) /2 ;i++) {
+	  ((float *)outputBuffer)[n]=((float *)rBuf)[i];
+	  ((float *)outputBuffer)[n+1]=((float *)rBuf)[i];
+	  n+=2;
+	}
+	free(rBuf);
+      }
+      if(readBytes <= 0) memset(outputBuffer,0,len);
     }
   }
   return 0;
