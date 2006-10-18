@@ -21,11 +21,17 @@
  */
 
 #include <stdlib.h>
-#include <config.h>
 
-#include <dev_sound.h>
-#include <jutils.h>
-#include <generic.h>
+#include <sound_device.h>
+#include <utils.h>
+
+/* settings (take care!) */
+#define IN_DATATYPE int16_t
+#define OUT_DATATYPE int16_t
+#define MIX_CHUNK 1152 //2048
+#define IN_CHUNK MIX_CHUNK
+#define IN_PIPESIZE IN_CHUNK*(sizeof(IN_DATATYPE))*64
+#define SAMPLE_RATE 44100 // 44100
 
 #define PA_SAMPLE_TYPE paFloat32
 #define PA_SAMPLES_PER_FRAME 2
@@ -35,41 +41,6 @@
 
 #define INPUT_DEVICE  Pa_GetDefaultInputDeviceID()
 #define OUTPUT_DEVICE Pa_GetDefaultOutputDeviceID()
-
-
-#ifdef HAVE_JACK
-int dev_jack_process(jack_nframes_t nframes, void *arg) {
-  
-  jack_nframes_t opframes;
-  SoundDevice *dev = (SoundDevice*)arg;
-  if(!dev->jack) return 0; // just return
-  
-  // take output from pipe and send it to jack
-  dev->jack_out_buf = (jack_default_audio_sample_t*)
-    jack_port_get_buffer(dev->jack_out_port,nframes);
-  opframes = dev->jack_out_pipe->read
-    (nframes * sizeof(float) * 2 , dev->jack_out_buf);
-  
-  // take input from jack and send it in pipe
-  dev->jack_in_buf = (jack_default_audio_sample_t*)
-    jack_port_get_buffer(dev->jack_in_port,nframes);
-  dev->jack_in_pipe->write // does the float2int conversion in one pass
-    (nframes * sizeof(float) * 2 , dev->jack_in_buf);
-  
-  return 0;
-}
-
-void dev_jack_shutdown(void *arg) {
-  SoundDevice *dev = (SoundDevice*)arg;
-  // close the jack channels
-  dev->jack = false;
-  jack_port_unregister(dev->jack_client, dev->jack_in_port);
-  jack_port_unregister(dev->jack_client, dev->jack_out_port);
-  jack_deactivate(dev->jack_client);
-  delete dev->jack_in_pipe;
-  delete dev->jack_out_pipe;
-}
-#endif
 
 
 SoundDevice::SoundDevice() {
@@ -83,9 +54,6 @@ SoundDevice::SoundDevice() {
   output_device.pipe->set_block(true,false);
   input_device.pipe->set_output_type("copy_float_to_int16");
   output_device.pipe->set_input_type("copy_int16_to_float");
-  jack = false;
-  jack_in = false;
-  jack_out = false;
 }
 
 SoundDevice::~SoundDevice() {
@@ -144,7 +112,6 @@ long len = framesPerBuffer * (PA_SAMPLES_PER_FRAME*sizeof(PA_SAMPLE_TYPE));
 
 bool SoundDevice::input(bool state) {
   bool res = false;
-  if(jack) return true;
   if(!res) res = pa_open(state,PaInput);
   return res;
 }
@@ -198,9 +165,9 @@ bool SoundDevice::pa_open(bool state,int mode) {
   }
   if(state && ((pa_mode & creq) != creq)) {
     dev->info = (PaDeviceInfo*)Pa_GetDeviceInfo( dev->id );
-    if(dev->info) notice("Opening %s device: %s",dir,dev->info->name);
+    if(dev->info) N("Opening %s device: %s",dir,dev->info->name);
     else {
-      error("%s device not available",dir);
+      E("%s device not available",dir);
       return false;
     }
     if((pa_mode & oreq) == oreq) {
@@ -212,7 +179,7 @@ bool SoundDevice::pa_open(bool state,int mode) {
           if(err == paNoError ) output_device.stream = input_device.stream;
 	  }
       else {
-        error("Full duplex has been requested but we don't have portaudio information");
+        E("Full duplex has been requested but we don't have portaudio information");
         return false;
       }
     }
@@ -221,19 +188,19 @@ bool SoundDevice::pa_open(bool state,int mode) {
     }
     if( err != paNoError) {
       Pa_Terminate();
-      error("error opening %s sound device: %s",dir,Pa_GetErrorText( err ) );
+      E("error opening %s sound device: %s",dir,Pa_GetErrorText( err ) );
       return false;
     }
     else {
       err = Pa_StartStream(dev->stream);
       if(err != paNoError) {
-         error("error starting %s audio stream: %s",dir,Pa_GetErrorText( err ) );
+         E("error starting %s audio stream: %s",dir,Pa_GetErrorText( err ) );
          return false;
       }
       pa_mode = pa_mode | creq;
     }
   } else if(!state && dev->stream) { // XXX - i have to check if this is still right
-     if(dev->info) notice("Closing %s device: %s",dir,dev->info->name);
+     if(dev->info) N("Closing %s device: %s",dir,dev->info->name);
     if((pa_mode & creq) == creq) {
        if((pa_mode & oreq) == oreq) {
          pa_mode = oreq;
@@ -254,53 +221,17 @@ bool SoundDevice::pa_open(bool state,int mode) {
 
 bool SoundDevice::output(bool state) {
   bool res = false;
-  if(jack) return true;
   if(!res) res = pa_open(state,PaOutput);
   return res;
 }
 
 bool SoundDevice::open(bool read, bool write) {
 
-  //  notice("detecting sound device");
+  N("open sound device");
 
-#ifdef HAVE_JACK
-  // we try to open up a jack client
-  jack_sample_size = sizeof(jack_default_audio_sample_t);
-  if(!jack) // check if it is not allready on
-    if( (jack_client = jack_client_new("MuSE")) !=0 ) {
-      notice("jack audio daemon detected");
-      act("hooking in/out sound channels");
-      warning("this feature is still experimental and won't work!");
-      warning("you need to stop jack and free the audio card");
-      jack = true;
-      jack_samplerate = jack_get_sample_rate(jack_client);
-      jack_set_process_callback(jack_client, dev_jack_process, this);    
-      jack_on_shutdown(jack_client,dev_jack_shutdown,this);
-
-      jack_in_pipe = new Pipe();
-      jack_in_pipe->set_output_type("copy_float_to_int16");
-      jack_in_pipe->set_block(false,true);
-
-      jack_out_pipe = new Pipe();
-      jack_out_pipe->set_input_type("copy_int16_to_float");
-      jack_in_pipe->set_block(true,false);
-
-      // open the jack input channel
-      jack_in_port = jack_port_register(jack_client, "capture",
-					JACK_DEFAULT_AUDIO_TYPE,
-					JackPortIsInput, 0);
-      // open the jack output channel
-      jack_out_port = jack_port_register(jack_client, "playback",
-					 JACK_DEFAULT_AUDIO_TYPE,
-					 JackPortIsOutput, 0);
-      
-      jack_activate(jack_client);
-      return true;
-    }
-#endif
   if( ! output(write) ) return false;
   
-  //if( ! input(read) ) return false;
+  if( ! input(read) ) return false;
   
   return true;
 }
@@ -340,15 +271,9 @@ int SoundDevice::read(void *buf, int len) {
   // len is in samples: 4*2 32bit stereo
   int res = -1;
 
-  if(jack) {
+  // takes number of left and right frames (stereo / 2)
+  res = input_device.pipe->read(len*2,buf);
 
-    res = jack_in_pipe->read(len*2,buf);
-
-  } else if(input_device.stream) { // portaudio
-
-    // takes number of left and right frames (stereo / 2)
-    res = input_device.pipe->read(len*2,buf);
-  }  
   return res;
 }
 
@@ -356,28 +281,15 @@ int SoundDevice::write(void *buf, int len) {
   // len is in samples, for bytes must *2 (16bit)
   int res = -1;
 
-  if(jack) { // jack audio daemon
+  res = output_device.pipe->write(len,buf);
+  //func("dspout available pipe space: %d \n",output_device.pipe->space());
 
-    res = jack_out_pipe->write(len*2,buf);
-
-  } else if(output_device.stream) { // portaudio
-	res = output_device.pipe->write(len,buf);
-	//func("dspout available pipe space: %d \n",output_device.pipe->space());
-  }
   return res;
 }
 
 void SoundDevice::flush_output() {
-  if(jack)
-    jack_out_pipe->flush();
-  else if(output_device.stream) { // portaudio
-    output_device.pipe->flush();
-  }
+  output_device.pipe->flush();
 }
 void SoundDevice::flush_input() {
-  if(jack)
-    jack_in_pipe->flush();
-  else if(input_device.stream) {
    input_device.pipe->flush();
-  }
 }

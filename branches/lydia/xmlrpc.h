@@ -28,13 +28,14 @@
 #include <stdlib.h>
 
 #include <thread.h>
+#include <linklist.h>
 
 using namespace XmlRpc;
 
 // damn STL
-#include <vector>
-using namespace std;
-using namespace __gnu_cxx;
+//#include <vector>
+//using namespace std;
+//using namespace __gnu_cxx;
 
 
 // METHODS:

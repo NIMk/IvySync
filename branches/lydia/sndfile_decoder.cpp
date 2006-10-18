@@ -18,23 +18,21 @@
  *
  */
 
+#include <string.h>
 
-#include <dec_snd.h>
-#include <jutils.h>
-#include <config.h>
-
-#ifdef HAVE_SNDFILE
+#include <sndfile_decoder.h>
+#include <utils.h>
 
 /* ----- LibSndFile input channel ----- */
 
 MuseDecSndFile::MuseDecSndFile ():MuseDec (){
-    func ("MuseDecSndFile::MuseDecSndFile()");
+  D("MuseDecSndFile::MuseDecSndFile()");
     strncpy (name, "Snd", 4);
     memset(&sf_info_struct, 0, sizeof(sf_info_struct));
 }
 
 MuseDecSndFile::~MuseDecSndFile (){
-    func ("MuseDecSndFile::~MuseSndFile()");
+    D ("MuseDecSndFile::~MuseSndFile()");
     sf_close (sf);
 }
 
@@ -48,7 +46,7 @@ int MuseDecSndFile::load (char *file) {
 	
 	/* all the info about the audio file into the sf_info_struct struct */
 	if(!(sf = sf_open(file, SFM_READ, &sf_info_struct))) {
-		warning("MuseDecSndFile:_load(): cannot open input file");
+		W("MuseDecSndFile:_load(): cannot open input file");
 		return (0);
 	}
 	/*
@@ -67,14 +65,14 @@ int MuseDecSndFile::load (char *file) {
 	channels = sf_info_struct.channels;
 	seekable = sf_info_struct.seekable ? true : false;
 	
-	func("Opened audio file: samplerate => %d, channels => %d, seekable => %s",
+	D("Opened audio file: samplerate => %d, channels => %d, seekable => %s",
 		samplerate, channels, seekable ? "true" : "false"); 
 
 	framepos = 0;
 
 	if(seekable) { 
 		frametot = sf_info_struct.frames;
-		func("Audio file is seekable: total frames: %d", frametot);
+		D("Audio file is seekable: total frames: %d", frametot);
 		res = 1; 
 	}
 	else res = 2;
@@ -91,7 +89,7 @@ IN_DATATYPE *MuseDecSndFile::get_audio () {
 		
 		framepos += frames/channels;
 		fps = samplerate;
-		//		func("MuseDecSndFile::get_audio => Frames readed: %d/%d", framepos, frametot);
+		//		D("MuseDecSndFile::get_audio => Frames readed: %d/%d", framepos, frametot);
 		return ((IN_DATATYPE *) snd_buffer); 	
 
 	} else { framepos=0; eos = true; return (NULL); }
@@ -103,19 +101,18 @@ bool MuseDecSndFile::seek (float pos) {
 		
 		framepos = 0;
 		sf_seek(sf, 0, SEEK_SET);
-		func("MuseDecSndFile::seek => Stop. Return to the begin of the track");
+		D("MuseDecSndFile::seek => Stop. Return to the begin of the track");
 		
 	} else	{
 
 		if((framepos = sf_seek(sf, (sf_count_t)(frametot * pos), SEEK_SET))==-1) {
-			func("MuseDecSndFile::seek error"); //,sf_strerror(sf));
+			D("MuseDecSndFile::seek error"); //,sf_strerror(sf));
 			return false;
 		}
-		func("MuseDecSndFile::seek at position %d/%d", framepos, frametot);
+		D("MuseDecSndFile::seek at position %d/%d", framepos, frametot);
 
 	}
 
 	return true;
 }
 
-#endif /* HAVE SNDFILE */

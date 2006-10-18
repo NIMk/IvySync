@@ -1,15 +1,7 @@
 #ifndef __DEV_SOUND_H__
 #define __DEV_SOUND_H__
 
-#include <config.h>
-
-#ifdef HAVE_JACK
-#include <jack/jack.h>
-#endif
-
-//#ifdef HAVE_PORTAUDIO
 #include <portaudio.h>
-//#endif
 
 #include <pipe.h>
 
@@ -56,10 +48,6 @@ class SoundDevice {
   void flush_input();
   void flush_output();
 
-  bool jack;
-  bool jack_in;
-  bool jack_out;
-
   /* TODO - should be private */
   PaDevInfo input_device; ///< portaudio input device
   PaDevInfo output_device; ///< portaudio output device
@@ -75,17 +63,6 @@ class SoundDevice {
 #define PaInput 1
 #define PaOutput 2
 
-  Pipe *jack_in_pipe;
-  Pipe *jack_out_pipe;
-#ifdef HAVE_JACK
-  jack_client_t *jack_client;
-  jack_port_t *jack_in_port;
-  jack_port_t *jack_out_port;
-  jack_default_audio_sample_t *jack_in_buf;
-  jack_default_audio_sample_t *jack_out_buf;
-  size_t jack_sample_size;
-  int jack_samplerate;
-#endif
 
 };
 

@@ -25,11 +25,7 @@
 #ifndef __IN_SND_H__
 #define __IN_SND_H__
 
-#include <config.h>
-
-#ifdef HAVE_SNDFILE
-
-#include <decoder.h>
+#include <sound_decoder.h>
 
 /* libsndfile inclusion */
 #include <sndfile.h>
@@ -60,5 +56,4 @@ class MuseDecSndFile:public MuseDec
 
 };
 
-#endif /* HAVE SNDFILE */
 #endif
