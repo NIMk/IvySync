@@ -24,7 +24,7 @@ CPPFLAGS = -I. -Ixmlrpc++ -Iportaudio -Wall -g -ggdb $(GTKFLAGS) $(AOFLAGS)
 LIBS = xmlrpc++/libxmlrpc++.a portaudio/libportaudio.a -lpthread -lssl
 
 IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o gui.o \
-              pipe.o xmlrpc.o sound_device.o sndfile_decoder.o sound_decoder.o
+              pipe.o xmlrpc.o sound_device.o sndfile_decoder.o sound_decoder.o parport.o
 
 all: xmlrpc ivysync
 

@@ -37,6 +37,7 @@
 #include <sound_device.h>
 #include <xmlrpc.h>
 #include <gui.h>
+#include <parport.h>
 
 #include <utils.h>
 
@@ -62,6 +63,9 @@ SoundDevice *snd = NULL;
 
 // Threaded daemon
 IvySyncDaemon *ivydaemon = NULL;
+
+// Parallel port controller
+ParPort *parport = NULL;
 
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
@@ -287,6 +291,8 @@ int main(int argc, char **argv) {
 	exit(0);
   }
 
+    
+
   /////////////////////////////////
   // setup the graphical interface
   if(graphical)
@@ -350,6 +356,18 @@ int main(int argc, char **argv) {
   // open only for playback
   snd->open(false, true);
   ////////////////////////////////
+
+  /////////////////////////////////
+  // Parallel port
+  parport = new ParPort();
+  parport->init();
+  // flash light at startup
+  parport->light(true);
+  jsleep(1,0);
+  parport->light(false);
+  parport->launch();
+
+
 
 
   ////////////////////////////////

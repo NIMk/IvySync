@@ -1,7 +1,7 @@
           ,-_/          .---.             
           '  | .  , . . \___  . . ,-. ,-. 
           .^ | | /  | |     \ | | | | |   
-          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.4]
+          `--' `'   `-| `---' `-| ' ' `-'  [ver 0.4 Jardin Secret]
                      /|        /|         
                     `-'       `-'    by Denis "jaromil" Rojo
 		                     Montevideo Artlab R&D
@@ -45,6 +45,8 @@ For more  documentation, screenshots and download, go to the website:
 
 == FEATURES
 
+    **** interactive (parallel port interfacing)
+
     * full quality s/video or composite multiple output 
 
     * professional grade low cost solution 
@@ -69,6 +71,8 @@ For more  documentation, screenshots and download, go to the website:
     * GNU/Linux supported platform with ~500Mhz CPU 
 
     * IvyTV compatible hardware decoder 
+
+    * ppdev parport parport_pc kernel modules
 
   ***   RENT or BUY a syncstarter pre-configured for your needs   ***
   ***  warranty and delivery services available, please contact:  ***
