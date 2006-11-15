@@ -7,6 +7,7 @@
 MuseDec::MuseDec() {
     bitrate = samplerate = channels = frames = 0;
     seekable = false; err = false; eos = false;
+    loaded = false;
     if(pthread_mutex_init (&mutex,NULL) == -1)
       E("%i:%s error initializing POSIX thread mutex",
 	    __LINE__,__FILE__);
