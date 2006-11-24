@@ -35,14 +35,7 @@
    @class MuseDecSndFile
    @brief SndFile decoder
 */
-class MuseDecSndFile:public MuseDec
-{
-	private:
-		/* pointer to data */
-		SNDFILE *sf;
-		/* file information struct */
-		SF_INFO sf_info_struct;		
-		short snd_buffer[IN_CHUNK];
+class MuseDecSndFile: public MuseDec, Entry {
 			
 	public:
 		/* TODO: scrivere il commento per la doc */
@@ -53,6 +46,13 @@ class MuseDecSndFile:public MuseDec
 		bool seek (float pos);
 
 		IN_DATATYPE *get_audio ();
+
+	private:
+		/* pointer to data */
+		SNDFILE *sf;
+		/* file information struct */
+		SF_INFO sf_info_struct;		
+		short snd_buffer[IN_CHUNK];
 
 };
 

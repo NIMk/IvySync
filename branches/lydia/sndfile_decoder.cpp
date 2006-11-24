@@ -25,10 +25,11 @@
 
 /* ----- LibSndFile input channel ----- */
 
-MuseDecSndFile::MuseDecSndFile ():MuseDec (){
+MuseDecSndFile::MuseDecSndFile ()
+  : MuseDec(), Entry() {
 
   D("MuseDecSndFile::MuseDecSndFile()");
-  strncpy (name, "Snd", 4);
+  set_name("Snd");
   memset(&sf_info_struct, 0, sizeof(sf_info_struct));
 
 }
@@ -100,6 +101,7 @@ IN_DATATYPE *MuseDecSndFile::get_audio () {
     
   } else { framepos=0; eos = true; return (NULL); }
 }
+
 
 bool MuseDecSndFile::seek (float pos) {
   

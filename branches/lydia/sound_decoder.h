@@ -1,5 +1,5 @@
 /* MuSE - Multiple Streaming Engine
- * Copyright (C) 2000-2004 Denis Rojo aka jaromil <jaromil@dyne.org>
+ * Copyright (C) 2000-2006 Denis Rojo aka jaromil <jaromil@dyne.org>
  *
  * This source code is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Public License as published 
@@ -15,10 +15,7 @@
  * this source code; if not, write to:
  * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- 
- $Id: decoder.h 408 2004-12-13 00:26:37Z jaromil $"
-
-*/
+ */
 
 /**
    @file decoder.h MuSE decoder abstraction
@@ -28,8 +25,10 @@
 #ifndef __DECODER_H__
 #define __DECODER_H__
 
-#include <pthread.h>
 #include <inttypes.h>
+
+#include <thread.h>
+#include <linklist.h>
 
 #define IN_DATATYPE int16_t
 #define MIX_CHUNK 1152 //2048
@@ -69,7 +68,7 @@
    @brief decoder parent abstraction class
 */
 
-class MuseDec {
+class MuseDec: public Thread {
 
   public:
 
@@ -104,6 +103,8 @@ class MuseDec {
   */
   virtual int load(char *file) = 0; /* open filename */
 
+  bool loaded; ///< should be set to true by the implemention on succesful load
+
   /**
      Seek position over the audio data available to an opened channel.
 
@@ -130,8 +131,6 @@ class MuseDec {
      @return pointer to decoded pcm buffer */
   virtual IN_DATATYPE *get_audio() = 0;  /* decode audio */
 
-  char name[5]; ///< decoder short name (3 letters)
-
   /**
    * the following variables describe the audio returned by
    * MuseDec::get_audio and must be setted up by the decoder implementation.
@@ -148,14 +147,8 @@ class MuseDec {
   bool err; ///< true when an error occurred during audio decoding
   ///////////////////////////////////////////////////////////
 
-  /* pthread stuff */
-  void lock() { pthread_mutex_lock(&mutex); };
-  ///< lock decoder thread
-  void unlock() { pthread_mutex_unlock(&mutex); };
-  ///< unlock decoder thread
+  void run(); ///< @TODO: multithreaded play of channels
 
- private:
-  pthread_mutex_t mutex;
 
 };    
 
