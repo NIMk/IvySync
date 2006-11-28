@@ -22,8 +22,8 @@
    @desc header file to be included by decoder implementations
 */
 
-#ifndef __DECODER_H__
-#define __DECODER_H__
+#ifndef __SOUND_DECODER_H__
+#define __SOUND_DECODER_H__
 
 #include <inttypes.h>
 
@@ -67,6 +67,8 @@
 
    @brief decoder parent abstraction class
 */
+
+class SoundDevice;
 
 class MuseDec: public Thread {
 
@@ -131,6 +133,22 @@ class MuseDec: public Thread {
      @return pointer to decoded pcm buffer */
   virtual IN_DATATYPE *get_audio() = 0;  /* decode audio */
 
+
+
+  // =====================================================================
+  // DECODER PARENT FUNCTIONS
+  
+  void run(); ///< thread runner
+
+  /**
+     Playback once the loaded file on a device, spawning a thread
+
+     @brief playback once the audio file
+     @return true on success, false otherwise */
+  bool play_once(SoundDevice *dev);
+
+  SoundDevice *device;
+
   /**
    * the following variables describe the audio returned by
    * MuseDec::get_audio and must be setted up by the decoder implementation.
@@ -147,7 +165,7 @@ class MuseDec: public Thread {
   bool err; ///< true when an error occurred during audio decoding
   ///////////////////////////////////////////////////////////
 
-  void run(); ///< @TODO: multithreaded play of channels
+
 
 
 };    

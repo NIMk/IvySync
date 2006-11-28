@@ -26,6 +26,7 @@
 #define __IN_SND_H__
 
 #include <sound_decoder.h>
+#include <linklist.h>
 
 /* libsndfile inclusion */
 #include <sndfile.h>

@@ -58,6 +58,7 @@ class SoundDevice {
   PaError err;
 
   PaDevices pa_dev;
+
   int pa_mode; ///< a switch to represent portaudio mode currently using (for noaudio,input,output or both) 
 #define PaNull 0
 #define PaInput 1

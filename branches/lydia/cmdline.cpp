@@ -32,7 +32,11 @@
 #include <errno.h>
 #include <signal.h>
 
+
+
 #include <decoder.h>
+
+#include <sndfile_decoder.h>
 
 #include <sound_device.h>
 #include <xmlrpc.h>
@@ -59,7 +63,10 @@ Gui *gui = NULL;
 XmlRpcServer *xmlrpc = NULL;
 
 // sound device
-SoundDevice *snd = NULL;
+SoundDevice *snddev = NULL;
+
+// sound file
+MuseDecSndFile *sndfile = NULL;
 
 // Threaded daemon
 IvySyncDaemon *ivydaemon = NULL;
@@ -352,9 +359,12 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
   /// Sound device
-  snd = new SoundDevice();
+  snddev = new SoundDevice();
   // open only for playback
-  snd->open(false, true);
+  snddev->open(false, true);
+  sndfile = new MuseDecSndFile();
+  sndfile->load("/mnt/hd1/1/Lydia/pleistersound_def.wav");
+  sndfile->play_once(snddev);
   ////////////////////////////////
 
   /////////////////////////////////

@@ -236,6 +236,8 @@ bool SoundDevice::open(bool read, bool write) {
   return true;
 }
 
+  
+
 void SoundDevice::close() {
   if((pa_mode&PaInput) == PaInput) {
     if((pa_mode&PaOutput) == PaOutput) {
