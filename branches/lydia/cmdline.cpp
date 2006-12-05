@@ -1,7 +1,7 @@
 
 /*  IvySync - Video SyncStarter
  *
- *  (c) Copyright 2004-2006 Denis Roio aka jaromil <jaromil@dyne.org>
+ *  (c) Copyright 2004-2006 Denis Rojo aka jaromil <jaromil@dyne.org>
  *                          Nederlands Instituut voor Mediakunst
  *
  * This source code is free software; you can redistribute it and/or
@@ -74,6 +74,23 @@ IvySyncDaemon *ivydaemon = NULL;
 // Parallel port controller
 ParPort *parport = NULL;
 
+
+// hardcoded movie offset positions
+class Offset {
+public:
+  Offset(int f, int b, int e) {
+    fogstart = f;
+    black = b;
+    enddrama = e;
+  }
+  ~Offset() { };
+  int fogstart;
+  int black;
+  int enddrama;
+};
+Offset *minidrama[5];
+
+
 char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
 "  -h --help      show this help\n"
@@ -88,16 +105,16 @@ char *help =
 
 char *short_options = "-hd:sb:x:p:gtD:";
 const struct option long_options[] = {
-  { "help", no_argument, NULL, 'h'},
-  { "device", required_argument, NULL, 'd'},
-  { "scan", no_argument, NULL, 's'},
-  { "buffer", required_argument, NULL, 'b'},
-  { "xmlrpc", required_argument, NULL, 'x'},
-  { "playmode", required_argument, NULL, 'p'},
-  { "gui", no_argument, NULL, 'g'},
-  { "test", no_argument, NULL, 't'},
-  { "debug", required_argument, NULL, 'D'},
-  {0, 0, 0, 0}
+{ "help", no_argument, NULL, 'h'},
+{ "device", required_argument, NULL, 'd'},
+{ "scan", no_argument, NULL, 's'},
+{ "buffer", required_argument, NULL, 'b'},
+{ "xmlrpc", required_argument, NULL, 'x'},
+{ "playmode", required_argument, NULL, 'p'},
+{ "gui", no_argument, NULL, 'g'},
+{ "test", no_argument, NULL, 't'},
+{ "debug", required_argument, NULL, 'D'},
+{0, 0, 0, 0}
 };
 
 
@@ -136,43 +153,43 @@ int cmdline(int argc, char **argv) {
   FILE *fd = NULL;
   int c;
   int res;
-
+  
   N("IvySync 0.3 / (c)2004-2006 Denis Rojo <jaromil@dyne.org>");
-
+  
   do { 
-    res = getopt_long(argc, argv, short_options, long_options, NULL);
-    
-    switch(res) {
+      res = getopt_long(argc, argv, short_options, long_options, NULL);
       
-    case 'h':
-      fprintf(stderr,"%s",help);
-      exit(1);
-      break;
-
-    case 'd':
-      dec = new Decoder();
-      dec->dummy = dummytest;
-      if( dec->init(optarg) )
-	decoders.append( dec );
-      else {
-	E("can't initialize device %s",optarg);
-	delete dec;
-	dec = NULL;
-      }
-      break;
-
-    case 's':
-      N("Scanning for available playback devices...");
-      dec = new Decoder();
-      c=0;
-
-      if( dec->init("/dev/video16") ) {
-	A("1. /dev/video16 is present");
-	c++;
-      }
-      dec->close();
-
-
+      switch(res) {
+          
+      case 'h':
+          fprintf(stderr,"%s",help);
+          exit(1);
+          break;
+          
+      case 'd':
+          dec = new Decoder();
+          dec->dummy = dummytest;
+          if( dec->init(optarg) )
+              decoders.append( dec );
+          else {
+              E("can't initialize device %s",optarg);
+              delete dec;
+              dec = NULL;
+          }
+          break;
+          
+      case 's':
+          N("Scanning for available playback devices...");
+          dec = new Decoder();
+          c=0;
+          
+          if( dec->init("/dev/video16") ) {
+              A("1. /dev/video16 is present");
+              c++;
+          }
+          dec->close();
+          
+          
       if( dec->init("/dev/video17") ) {
 	A("2. /dev/video17 is present");
 	c++;
@@ -377,7 +394,13 @@ int main(int argc, char **argv) {
   parport->light(false);
   parport->launch();
 
-
+  /////////////////////////////////
+  // video files minidrama offsets
+  minidrama[0] = new Offset(1750, 1950, 3200);
+  minidrama[1] = new Offset(4680, 4880, 5560);
+  minidrama[2] = new Offset(6955, 7140, 7900);
+  minidrama[3] = new Offset(9460, 9610, 9990);
+  minidrama[4] = new Offset(10380, 10520, 11170);
 
 
   ////////////////////////////////
@@ -408,42 +431,94 @@ int main(int argc, char **argv) {
   }
 
   syncstart = 1;
-  ////////////////////////////////
 
+  //////////////////////////////////////
+  // live interactive part while playing
+  int c, off;
+  bool trigger;
+  int interval = 100;
+  static bool syncer;
+  
+  for( c=0; c<5; c++) { // cycle thru 5 minidramas
+    trigger = false;
+    dec = (Decoder*)decoders.begin();
+  
+    do {
+      jsleep(0, interval);
+      off = dec->getoffset();
+    } while(off < minidrama[c]->fogstart);
 
+    A("fogstart of minidrama %u",c);
 
+    // fog start: reset button and play sound
+    parport->button_reset();
+    parport->light(true);
+    sndfile->replay = true;
+
+    do { 
+      jsleep(0, interval);
+      off = dec->getoffset();
+    } while(off < minidrama[c]->black);
+
+    A("end of fog at minidrama %u",c);
+    parport->light(false);
+
+    // fog end: check button and skip if not pressed
+    if(! parport->button_is_pressed() ) {
+      A("no button pressed: skipping minidrama %u", c);
+      D("seek to offset %u", minidrama[c]->enddrama);
+      /// global seek of all channels
+      dec = (Decoder*) decoders.begin();
+      syncer = false;
+      while(dec) {
+	dec->stop();
+	dec->setup(&syncer, 0);
+	dec->setoffset( minidrama[c]->enddrama );
+	dec->play();
+	dec = (Decoder*) dec->next;
+      }
+      jsleep(0, interval);
+      syncer = true;
+
+    } else {
+      A("button was pressed: showing minidrama %u",c);
+    }    
+
+  }
+  
+  //////////////////////////////////////
   
   if(rpcdaemon) {
-
+    
     // run as a daemon: quit only when requested
     while( ! ivydaemon->quit ) {
       ivydaemon->run(1.0);
       jsleep(0,10);
     }
-
+    
   } else {
-
+    
     // run until all the channels are at the end
     int still_running = decoders.len();
-
+    
     while(still_running) {
-
+      
       still_running = 0;
       dec = (Decoder*)decoders.begin();
-
+      
       while(dec) {
-
+	
 	if(dec->playing) still_running++;
-
+	
 	jsleep(1,0); // 1 second delay check
-
+	
 	dec = (Decoder*)dec->next;
       }
     }
   }
-
+  
   N("quit!");
-
+  
 
   exit(1);
 }

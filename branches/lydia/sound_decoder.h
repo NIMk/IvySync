@@ -146,6 +146,7 @@ class MuseDec: public Thread {
      @brief playback once the audio file
      @return true on success, false otherwise */
   bool play_once(SoundDevice *dev);
+  bool replay;
 
   SoundDevice *device;
 

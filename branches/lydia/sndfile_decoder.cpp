@@ -96,7 +96,7 @@ IN_DATATYPE *MuseDecSndFile::get_audio () {
     
     framepos += frames/channels;
     fps = samplerate;
-    //		D("MuseDecSndFile::get_audio => Frames readed: %d/%d", framepos, frametot);
+    // D("MuseDecSndFile::get_audio => Frames readed: %d/%d", framepos, frametot);
     return ((IN_DATATYPE *) snd_buffer); 	
     
   } else { framepos=0; eos = true; return (NULL); }
@@ -109,7 +109,7 @@ bool MuseDecSndFile::seek (float pos) {
     
     framepos = 0;
     sf_seek(sf, 0, SEEK_SET);
-    D("MuseDecSndFile::seek => Stop. Return to the begin of the track");
+    D("MuseDecSndFile::seek => rewinded to the beginning of the track");
     
   } else	{
     

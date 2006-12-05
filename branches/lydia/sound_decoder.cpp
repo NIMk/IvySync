@@ -18,6 +18,7 @@ MuseDec::~MuseDec() { }
 
 bool MuseDec::play_once(SoundDevice *dev) {
   seek(0.0);
+  replay = true;
   eos = false;
   device = dev;
   launch();
@@ -33,15 +34,24 @@ void MuseDec::run() {
     return;
   }
 
-  while(!eos) {
+  while(true) {
 
-    buf = get_audio();
-
-    if(!buf) break;
-
-    device->write(buf, IN_CHUNK);
-
-    //    device->flush_output();
+    while(!replay) { jsleep(0,500); }
+    
+    while(!eos) {
+      
+      buf = get_audio();
+      
+      if(!buf) break;
+      
+      device->write(buf, IN_CHUNK);
+      
+      //    device->flush_output();
+      
+    }
+    replay = false;
+    eos = false;
+    seek(0.0);
 
   }
 
