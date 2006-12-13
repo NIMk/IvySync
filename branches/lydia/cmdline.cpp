@@ -46,6 +46,7 @@
 #include <utils.h>
 
 
+bool useaudio = true;
 bool syncstart = false;
 bool graphical = false;
 bool dummytest = false;
@@ -101,9 +102,10 @@ char *help =
 "  -b --buffer    size of video buffer in KB (default 64)\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
 "  -x --xmlrpc    run XmlRpc daemon on a network port\n"
-"  -g --gui       start the graphical user interface\n";
+"  -g --gui       start the graphical user interface\n"
+"  -a --noaudio   don't open the sound device\n";
 
-char *short_options = "-hd:sb:x:p:gtD:";
+char *short_options = "-hd:sb:x:p:gtD:a";
 const struct option long_options[] = {
 { "help", no_argument, NULL, 'h'},
 { "device", required_argument, NULL, 'd'},
@@ -114,6 +116,7 @@ const struct option long_options[] = {
 { "gui", no_argument, NULL, 'g'},
 { "test", no_argument, NULL, 't'},
 { "debug", required_argument, NULL, 'D'},
+{ "noaudio", required_argument, NULL, 'a'},
 {0, 0, 0, 0}
 };
 
@@ -247,6 +250,10 @@ int cmdline(int argc, char **argv) {
       rpcdaemonport = atoi(optarg);
       break;
 
+    case 'a':
+      useaudio = false;
+      break;
+
     case 'g':
       graphical = true;
       break;
@@ -376,12 +383,14 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
   /// Sound device
-  snddev = new SoundDevice();
-  // open only for playback
-  snddev->open(false, true);
-  sndfile = new MuseDecSndFile();
-  sndfile->load("/mnt/hd1/1/Lydia/pleistersound_def.wav");
-  sndfile->play_once(snddev);
+  if(useaudio) {
+    snddev = new SoundDevice();
+    // open only for playback
+    snddev->open(false, true);
+    sndfile = new MuseDecSndFile();
+    sndfile->load("/mnt/hd1/1/Lydia/pleistersound_def.wav");
+    sndfile->play_once(snddev);
+  }
   ////////////////////////////////
 
   /////////////////////////////////
@@ -453,7 +462,7 @@ int main(int argc, char **argv) {
     // fog start: reset button and play sound
     parport->button_reset();
     parport->light(true);
-    sndfile->replay = true;
+    if(useaudio) sndfile->replay = true;
 
     do { 
       jsleep(0, interval);
