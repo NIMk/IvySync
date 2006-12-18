@@ -72,7 +72,7 @@ void ParPort::run() {
     // Read from the status port (BASE+2)
     status = inb(BASEPORT + 1);
 
-    if( status == 120 )
+    if( status == 88 )
       button_state = true;
 
   }

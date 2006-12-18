@@ -465,11 +465,37 @@ int main(int argc, char **argv) {
     if(useaudio) sndfile->replay = true;
 
     do { 
+
       jsleep(0, interval);
+
+      if( parport->button_is_pressed() ) {
+
+        parport->light(false);
+
+        D("seek to offset %u", minidrama[c]->black);
+        /// global seek of all channels
+        dec = (Decoder*) decoders.begin();
+        syncer = false;
+        while(dec) {
+
+	  dec->stop();
+	  dec->setup(&syncer, 0);
+	  dec->setoffset( minidrama[c]->black );
+	  dec->play();
+	  dec = (Decoder*) dec->next;
+
+        }
+
+        jsleep(0, interval);
+        syncer = true;
+        break;
+
+      }
+
       off = dec->getoffset();
+
     } while(off < minidrama[c]->black);
 
-    A("end of fog at minidrama %u",c);
     parport->light(false);
 
     // fog end: check button and skip if not pressed
@@ -492,6 +518,8 @@ int main(int argc, char **argv) {
     } else {
       A("button was pressed: showing minidrama %u",c);
     }    
+
+    parport->button_reset();
 
   }
   
