@@ -23,10 +23,16 @@ LIBS = -lpthread
 
 IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o gui.o udpliteserver.o
 
-all: ivysync
+all: ivysync udptest udpbroadcast
 
 ivysync: $(IVYSYNC_OBJ)
 	$(CPP) $(CPPFLAGS) -o ivysync $(IVYSYNC_OBJ) $(LIBS) $(GTKLIBS)
+
+udptest: udpliteserver.o utils.o udptest.o thread.o
+	$(CPP) $(CPPFLAGS) -o udptest udpliteserver.o utils.o udptest.o thread.o -lpthread
+
+udpbroadcast: udpbroadcast.o
+	$(CPP) $(CPPFLAGS) -o udpbroadcast udpbroadcast.o
 
 #make clean
 clean:
