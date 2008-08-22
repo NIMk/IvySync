@@ -24,11 +24,11 @@
 void set_debug(int lev);
 int get_debug();
 
-void N(char *format, ...);
-void A(char *format, ...);
-void W(char *format, ...);
-void E(char *format, ...);
-void D(char *format, ...);
+void N(const char *format, ...);
+void A(const char *format, ...);
+void W(const char *format, ...);
+void E(const char *format, ...);
+void D(const char *format, ...);
 
 void jsleep(int sec, long nsec);
 

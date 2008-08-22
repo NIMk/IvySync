@@ -14,22 +14,26 @@ GTKLIBS  = `pkg-config --libs   gtk+-2.0`
 # debugging flags:
 #CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
 # optimized flags:
-CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math $(GTKFLAGS)
+CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math
 
 
 
 
 LIBS = xmlrpc++/libxmlrpc++.a -lpthread -lssl
 
-IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o gui.o xmlrpc.o
+IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o xmlrpc.o
 
-all: xmlrpc ivysync
+all: xmlrpc ivysync ivysync-nox
 
 xmlrpc: 
 	cd xmlrpc++ && $(MAKE)
 
-ivysync: $(IVYSYNC_OBJ)
+ivysync: $(IVYSYNC_OBJ) gui.o
 	$(CPP) $(CPPFLAGS) -o ivysync $(IVYSYNC_OBJ) $(LIBS) $(GTKLIBS)
+
+ivysync-nox: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-nox $(IVYSYNC_OBJ) $(LIBS)
+
 
 #make clean
 clean:

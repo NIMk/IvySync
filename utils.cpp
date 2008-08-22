@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <cstdio>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -44,7 +44,7 @@ int get_debug() {
   return(verbosity);
 }
 
-void N(char *format, ...) {
+void N(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
 
@@ -54,7 +54,7 @@ void N(char *format, ...) {
   va_end(arg);
 }
 
-void D(char *format, ...) {
+void D(const char *format, ...) {
   if(verbosity>=FUNC) {
     va_list arg;
     va_start(arg, format);
@@ -66,7 +66,7 @@ void D(char *format, ...) {
   }
 }
 
-void E(char *format, ...) {
+void E(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
   
@@ -76,7 +76,7 @@ void E(char *format, ...) {
   va_end(arg);
 }
 
-void A(char *format, ...) {
+void A(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
   
@@ -86,7 +86,7 @@ void A(char *format, ...) {
   va_end(arg);
 }
 
-void W(char *format, ...) {
+void W(const char *format, ...) {
   if(verbosity>=WARN) {
     va_list arg;
     va_start(arg, format);

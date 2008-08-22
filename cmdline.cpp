@@ -35,7 +35,11 @@
 #include <decoder.h>
 
 #include <xmlrpc.h>
+
+#ifdef WITH_GUI
 #include <gui.h>
+#endif
+
 
 #include <utils.h>
 
@@ -50,8 +54,10 @@ int videobuf = 64;
 // our global linklist holding all instantiated decoders
 Linklist decoders;
 
+#ifdef WITH_GUI
 // graphical interface
 Gui *gui;
+#endif
 
 // xmlrpc interface
 XmlRpcServer *xmlrpc;
@@ -59,7 +65,7 @@ XmlRpcServer *xmlrpc;
 // Threaded daemon
 IvySyncDaemon *ivydaemon;
 
-char *help =
+const char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
 "  -h --help      show this help\n"
 "  -t --test      dummy testrun: don't open devices\n"
@@ -68,10 +74,13 @@ char *help =
 "  -d --device    activate a device (i.e. /dev/video16)\n"
 "  -b --buffer    size of video buffer in KB (default 64)\n"
 "  -p --playmode  playlist mode (play|cont|loop|rand)\n"
-"  -x --xmlrpc    run XmlRpc daemon on a network port\n"
-"  -g --gui       start the graphical user interface\n";
+#ifdef WITH_GUI
+"  -g --gui       start the graphical user interface\n"
+#endif
+"  -x --xmlrpc    run XmlRpc daemon on a network port\n";
 
-char *short_options = "-hd:sb:x:p:gtD:";
+const char *short_options = "-hd:sb:x:p:gtD:";
+
 const struct option long_options[] = {
   { "help", no_argument, NULL, 'h'},
   { "device", required_argument, NULL, 'd'},
@@ -79,7 +88,9 @@ const struct option long_options[] = {
   { "buffer", required_argument, NULL, 'b'},
   { "xmlrpc", required_argument, NULL, 'x'},
   { "playmode", required_argument, NULL, 'p'},
+#ifdef WITH_GUI
   { "gui", no_argument, NULL, 'g'},
+#endif
   { "test", no_argument, NULL, 't'},
   { "debug", required_argument, NULL, 'D'},
   {0, 0, 0, 0}
@@ -90,7 +101,9 @@ void quitproc (int Sig) { /* signal handling */
   N("received signal %u on process %u",Sig,getpid());  
   A("please wait while quitting threads");
 
+#ifdef WITH_GUI
   if(graphical) gtk_main_quit();
+#endif
 
   Decoder *dec;
   dec = (Decoder*)decoders.begin();
@@ -122,7 +135,7 @@ int cmdline(int argc, char **argv) {
   int c;
   int res;
 
-  N("IvySync 0.3 / (c)2004-2006 Denis Rojo <jaromil@dyne.org>");
+  N("IvySync 0.5 / (c)2004-2008 Denis Roio <jaromil@dyne.org>");
 
   do { 
     res = getopt_long(argc, argv, short_options, long_options, NULL);
@@ -283,6 +296,8 @@ int main(int argc, char **argv) {
 	exit(0);
   }
 
+#ifdef WITH_GUI
+
   /////////////////////////////////
   // setup the graphical interface
   if(graphical)
@@ -305,6 +320,7 @@ int main(int argc, char **argv) {
   }
   ////////////////////////////////
 
+#endif
 
   ////////////////////////////////
   /// setup the XMLRPC interface

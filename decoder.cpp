@@ -18,6 +18,9 @@
  * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -29,8 +32,10 @@
 
 #include <decoder.h>
 #include <utils.h>
-#include <gui.h>
 
+#ifdef WITH_GUI
+#include <gui.h>
+#endif
 
 
 Decoder::Decoder()
@@ -41,7 +46,9 @@ Decoder::Decoder()
   playing = false;
   stopped = false;
   dummy = false;
+#ifdef WITH_GUI
   gui = false;
+#endif
   quit = true;
 
   filesize = 0L;
@@ -59,7 +66,7 @@ Decoder::~Decoder() {
   quit = true;
 }
 
-bool Decoder::init(char *dev) {
+bool Decoder::init(const char *dev) {
   int len;
 
   if(dummy) {
@@ -186,8 +193,10 @@ void Decoder::update() {
     }
   }
   
+#ifdef WITH_GUI
   // refresh the GUI if present
   if(gui) gui->refresh();
+#endif
 
 }
 
@@ -291,8 +300,10 @@ void Decoder::run() {
 
     do { // inner reading loop
 
+#ifdef WITH_GUI
       // update the GUI
       if(gui) gui->refresh();
+#endif
 
       // process asynchronous flags
       if(quit || stopped) break;
@@ -651,6 +662,7 @@ int Decoder::load() {
   return c;
 }
 
+#ifdef WITH_GUI
 int Decoder::save() {
   FILE *fd;
   char *home = getenv("HOME");
@@ -693,3 +705,4 @@ int Decoder::save() {
   fclose(fd);
   return c;
 }
+#endif

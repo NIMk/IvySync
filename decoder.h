@@ -51,7 +51,10 @@
 // maximum path lenght
 #define MAXPATH 512
 
+#ifdef WITH_GUI
 class Playlist; // graphical interface
+#endif
+
 
 class Decoder : public Thread, public Entry {
 
@@ -59,7 +62,7 @@ class Decoder : public Thread, public Entry {
   Decoder();
   ~Decoder();
 
-  bool init(char *dev);
+  bool init(const char *dev);
 
   bool setup(bool *sync, int bufsize);
 
@@ -106,7 +109,9 @@ class Decoder : public Thread, public Entry {
   Linklist playlist;
   Entry *current; ///< path of movie currently playing
 
+#ifdef WITH_GUI
   Playlist *gui; ///< pointer to the GUI, NULL if none
+#endif
 
   bool dummy; // for dummy test run without devices
 
