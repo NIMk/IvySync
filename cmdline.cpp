@@ -31,10 +31,13 @@
 #include <getopt.h>
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 
 #include <decoder.h>
 
+#ifdef WITH_XMLRPC
 #include <xmlrpc.h>
+#endif
 
 #ifdef WITH_GUI
 #include <gui.h>
@@ -59,11 +62,12 @@ Linklist decoders;
 Gui *gui;
 #endif
 
+#ifdef WITH_XMLRPC
 // xmlrpc interface
 XmlRpcServer *xmlrpc;
-
 // Threaded daemon
 IvySyncDaemon *ivydaemon;
+#endif
 
 const char *help =
 "Usage: ivysync [-hsDgt] [ -d /dev/video16 [ -p playmode files ] ]\n"
@@ -86,7 +90,9 @@ const struct option long_options[] = {
   { "device", required_argument, NULL, 'd'},
   { "scan", no_argument, NULL, 's'},
   { "buffer", required_argument, NULL, 'b'},
+#ifdef WITH_XMLRPC
   { "xmlrpc", required_argument, NULL, 'x'},
+#endif
   { "playmode", required_argument, NULL, 'p'},
 #ifdef WITH_GUI
   { "gui", no_argument, NULL, 'g'},
@@ -322,6 +328,7 @@ int main(int argc, char **argv) {
 
 #endif
 
+#ifdef WITH_XMLRPC
   ////////////////////////////////
   /// setup the XMLRPC interface
   if(rpcdaemon) {
@@ -351,9 +358,8 @@ int main(int argc, char **argv) {
       A("XMLRPC daemon listening for commands on port %u",
 	rpcdaemonport);
   }
-
   ////////////////////////////////
-
+#endif
 
 
   ////////////////////////////////
@@ -389,6 +395,7 @@ int main(int argc, char **argv) {
 
 
   
+#ifdef WITH_XMLRPC
   if(rpcdaemon) {
 
     // run as a daemon: quit only when requested
@@ -397,24 +404,27 @@ int main(int argc, char **argv) {
       jsleep(0,10);
     }
 
-  } else {
-
-    // run until all the channels are at the end
-    int still_running = decoders.len();
-
-    while(still_running) {
-
-      still_running = 0;
-      dec = (Decoder*)decoders.begin();
-
-      while(dec) {
-
-	if(dec->playing) still_running++;
-
-	jsleep(1,0); // 1 second delay check
-
-	dec = (Decoder*)dec->next;
-      }
+    N("quit!");
+    exit(1);
+  }
+#endif
+  
+  
+  // run until all the channels are at the end
+  int still_running = decoders.len();
+  
+  while(still_running) {
+    
+    still_running = 0;
+    dec = (Decoder*)decoders.begin();
+    
+    while(dec) {
+      
+      if(dec->playing) still_running++;
+      
+      jsleep(1,0); // 1 second delay check
+      
+      dec = (Decoder*)dec->next;
     }
   }
 

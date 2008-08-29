@@ -19,6 +19,8 @@
  */
 
 
+#ifdef WITH_XMLRPC
+
 #include <decoder.h>
 #include <xmlrpc.h>
 #include <utils.h>
@@ -307,3 +309,5 @@ void SetOffset::execute(XmlRpcValue &params, XmlRpcValue &result) {
   D("XMLRPC: SetOffset decoder %u to position %d", decnum, pos);
   dec->setoffset( (off64_t) pos );
 }
+
+#endif

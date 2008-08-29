@@ -1,0 +1,39 @@
+# We don't need kludgy automatizations here,
+# let's use a simple Makefile.
+# Just tweak the values below to fix your paths
+#
+# $Id: Makefile 60 2004-11-12 15:40:18Z jaromil $
+
+
+CPP = g++
+LINKER = ld
+
+GTKFLAGS = -DWITH_GUI `pkg-config --cflags gtk+-2.0`
+GTKLIBS  = `pkg-config --libs   gtk+-2.0`
+
+# debugging flags:
+#CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
+# optimized flags:
+CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math $(GTKFLAGS)
+
+
+
+
+IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o gui.o
+
+all: ivysync-gtk
+
+ivysync-gtk: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-gtk $(IVYSYNC_OBJ) $(GTKLIBS) -lpthread
+	rm -f *.o
+
+install: ivysync-gtk
+	install ivysync-gtk /usr/local/bin
+
+# generic make rules
+#%: %.c
+#	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+#%.o: %.c
+#	$(CC) $(CFLAGS) -c -o $@ $<
+
+

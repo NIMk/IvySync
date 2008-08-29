@@ -1,0 +1,43 @@
+# We don't need kludgy automatizations here,
+# let's use a simple Makefile.
+# Just tweak the values below to fix your paths
+#
+# $Id: Makefile 60 2004-11-12 15:40:18Z jaromil $
+
+
+CPP = g++
+LINKER = ld
+
+
+# debugging flags:
+#CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
+# optimized flags:
+
+CPPFLAGS = -I. -Ixmlrpc++ -Wall -O2 -fomit-frame-pointer -ffast-math -DWITH_XMLRPC
+
+
+
+
+LIBS = xmlrpc++/libxmlrpc++.a -lpthread -lssl
+
+IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o xmlrpc.o
+
+all: xmlrpc ivysync-rpc
+
+xmlrpc:
+	cd xmlrpc++ && $(MAKE)
+
+ivysync-rpc: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-rpc $(IVYSYNC_OBJ) $(LIBS)
+	rm -f *.o
+
+install: ivysync-rpc
+	install ivysync-rpc /usr/local/bin
+
+# generic make rules
+#%: %.c
+#	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+#%.o: %.c
+#	$(CC) $(CFLAGS) -c -o $@ $<
+
+

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cstdio>
 
+#include <stdlib.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -420,15 +422,15 @@ Playlist::Playlist(int num) {
 
   
   { // then the drag and drop stuff
-    target_entry[0].target = DRAG_TAR_NAME_0;
+    target_entry[0].target = (gchar*)DRAG_TAR_NAME_0;
     target_entry[0].flags = 0;
     target_entry[0].info = DRAG_TAR_INFO_0;
     
-    target_entry[1].target = DRAG_TAR_NAME_1;
+    target_entry[1].target = (gchar*)DRAG_TAR_NAME_1;
     target_entry[1].flags = 0;
     target_entry[1].info = DRAG_TAR_INFO_1;
     
-    target_entry[2].target = DRAG_TAR_NAME_2;
+    target_entry[2].target = (gchar*)DRAG_TAR_NAME_2;
     target_entry[2].flags = 0;
     target_entry[2].info = DRAG_TAR_INFO_2;
 

@@ -21,6 +21,7 @@
 #ifndef __XMLRPC_H__
 #define __XMLRPC_H__
 
+#ifdef WITH_XMLRPC
 
 #include <XmlRpc.h>
 
@@ -205,5 +206,7 @@ class Quit : public XmlRpcServerMethod, IvySyncPublicMethod {
     return std::string("Quit the ivysync from running"); }
   
 };
+
+#endif
 
 #endif

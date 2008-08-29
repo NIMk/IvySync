@@ -1,0 +1,35 @@
+# We don't need kludgy automatizations here,
+# let's use a simple Makefile.
+# Just tweak the values below to fix your paths
+#
+# $Id: Makefile 60 2004-11-12 15:40:18Z jaromil $
+
+
+CPP = g++
+LINKER = ld
+
+CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math
+
+
+IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o
+
+all: ivysync-nox
+
+ivysync-nox: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-nox $(IVYSYNC_OBJ) -lpthread
+	rm -f *.o
+
+#make clean
+clean:
+	rm -rf *.o *~ ivysync-nox
+
+install: ivysync-nox
+	install ivysync-nox /usr/local/bin
+
+# generic make rules
+#%: %.c
+#	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+#%.o: %.c
+#	$(CC) $(CFLAGS) -c -o $@ $<
+
+
