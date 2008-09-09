@@ -30,6 +30,7 @@ bool Thread::launch() {
   lock(); // the runner will unlock when ready
   return pthread_create(&thread,&attr,&kickoff, this);
   lock(); // wait until the thread is ready
+  running = true;
   unlock();
 }
 

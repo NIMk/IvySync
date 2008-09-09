@@ -43,6 +43,9 @@
 #include <gui.h>
 #endif
 
+#ifdef WITH_UDP
+#include <udpliteserver.h>
+#endif
 
 #include <utils.h>
 
@@ -67,6 +70,11 @@ Gui *gui;
 XmlRpcServer *xmlrpc;
 // Threaded daemon
 IvySyncDaemon *ivydaemon;
+#endif
+
+#ifdef WITH_UDP
+// UDP lite server
+UdpLiteSrv *udpsrv;
 #endif
 
 const char *help =
@@ -325,7 +333,6 @@ int main(int argc, char **argv) {
     exit(1);
   }
   ////////////////////////////////
-
 #endif
 
 #ifdef WITH_XMLRPC
@@ -362,6 +369,13 @@ int main(int argc, char **argv) {
 #endif
 
 
+#ifdef WITH_UDP
+  udpsrv = new UdpLiteSrv();
+  udpsrv->init(&syncstart);
+  udpsrv->launch();
+#endif
+
+
   ////////////////////////////////
   /// Syncstart!
   
@@ -384,12 +398,21 @@ int main(int argc, char **argv) {
 
   if( ! rpcdaemon ) {  
     A("Syncing %i players...",decoders.len());
-    
+
+#ifdef WITH_UDP
+    A("waiting for udp signal");
+#else
     jsleep(0,500);
+    syncstart = 1;
     A("Start!");
+#endif
   }
 
-  syncstart = 1;
+
+  
+  if(!syncstart) jsleep(0,100);
+
+
   ////////////////////////////////
 
 
