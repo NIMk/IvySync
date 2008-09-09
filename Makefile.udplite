@@ -1,0 +1,22 @@
+CPP = g++
+LINKER = ld
+
+# debugging flags:
+#CPPFLAGS = -I. -Ixmlrpc++ -Wall -g -ggdb $(GTKFLAGS)
+# optimized flags:
+CPPFLAGS = -I. -Wall -O2 -fomit-frame-pointer -ffast-math -DWITH_UDP
+
+LIBS = -lpthread
+
+IVYSYNC_OBJ = decoder.o thread.o linklist.o utils.o cmdline.o udpliteserver.o
+
+all: ivysync-udp udpbroadcast
+
+ivysync-udp: $(IVYSYNC_OBJ)
+	$(CPP) $(CPPFLAGS) -o ivysync-udp $(IVYSYNC_OBJ) $(LIBS)
+
+udptest: udpliteserver.o utils.o udptest.o thread.o
+	$(CPP) $(CPPFLAGS) -o udptest udpliteserver.o utils.o udptest.o thread.o -lpthread
+
+udpbroadcast: udpbroadcast.o
+	$(CPP) $(CPPFLAGS) -o udpbroadcast udpbroadcast.o

@@ -13,7 +13,8 @@ echo
 echo "1 - Standalone player - playback configured playlists"
 echo "2 - Playlist editor - graphical interface for playlists"
 echo "3 - XMLRPC daemon - remote controlled player daemon"
-echo "4 - ALL of the above"
+echo "4 - UDP-Lite daemon - network syncstart of multiple machines"
+echo "5 - ALL of the above"
 
 echo
 
@@ -32,9 +33,13 @@ case $sel in
 	make -f Makefile.xmlrpc
 	;;
     4)
+	make -f Makefile.udplite
+	;;
+    5)
 	make -f Makefile.player
 	make -f Makefile.playlist
 	make -f Makefile.xmlrpc
+	make -f Makefile.udplite
 	;;
     *)
 	echo "invalid selection."
