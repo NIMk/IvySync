@@ -53,7 +53,12 @@ int main(int argc, char *argv[])
 	their_addr.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(their_addr.sin_zero, '\0', sizeof their_addr.sin_zero);
 
-	if ((numbytes=sendto(sockfd, argv[3], strlen(argv[3]), 0,
+	// forge string with newline
+	int len = strlen(argv[3]);
+	char *temp = (char*)calloc(len+2,sizeof(char));
+	snprintf(temp,len+2,"%s\n\n",argv[3]);
+
+	if ((numbytes=sendto(sockfd, temp, len+2, 0,
 			 (struct sockaddr *)&their_addr, sizeof their_addr)) == -1) {
 		perror("sendto");
 		exit(1);
@@ -62,6 +67,7 @@ int main(int argc, char *argv[])
 	printf("sent %d bytes to %s\n", numbytes, inet_ntoa(their_addr.sin_addr));
 
 	close(sockfd);
+	free(temp);
 
 	return 0;
 }
