@@ -1,0 +1,8 @@
+*.o
+ivysync-gtk
+ivysync-nox
+ivysync-rpc
+ivysync-udp
+udpbroadcast
+xmlrpc++/libxmlrpc++.a
+

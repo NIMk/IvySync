@@ -25,8 +25,9 @@ int main(int argc, char *argv[])
 	int broadcast = 1;
 	//char broadcast = '1'; // if that doesn't work, try this
 
-	if (argc != 3) {
-		fprintf(stderr,"usage: broadcaster hostname message\n");
+	if (argc != 4) {
+		fprintf(stderr,"usage: broadcaster hostname port message\n");
+		fprintf(stderr,"hostname can be 255.255.255.255 for broadcast\n");
 		exit(1);
 	}
 
@@ -48,11 +49,11 @@ int main(int argc, char *argv[])
 	}
 
 	their_addr.sin_family = AF_INET;	 // host byte order
-	their_addr.sin_port = htons(SERVERPORT); // short, network byte order
+	their_addr.sin_port = htons( atoi(argv[2]) ); // short, network byte order
 	their_addr.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(their_addr.sin_zero, '\0', sizeof their_addr.sin_zero);
 
-	if ((numbytes=sendto(sockfd, argv[2], strlen(argv[2]), 0,
+	if ((numbytes=sendto(sockfd, argv[3], strlen(argv[3]), 0,
 			 (struct sockaddr *)&their_addr, sizeof their_addr)) == -1) {
 		perror("sendto");
 		exit(1);

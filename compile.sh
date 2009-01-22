@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo
 echo
@@ -21,6 +21,7 @@ echo
 echo "press a number and then [enter]"
 read -s sel
 
+make clean
 
 case $sel in
     1)
